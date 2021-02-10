@@ -24,8 +24,9 @@ def parse_command_line():
     parser.add_argument('-b', '--batch_size', type=int, default=8, help='batch size')
     parser.add_argument('-n', '--num_stacks', type=int, default=2, help='number of stacks')
     parser.add_argument('-i', '--input_size', type=int, default=128, help='size of input')
-    parser.add_argument('-o', '--heatmap_size', type=int, default=64, help='size of input')
+    parser.add_argument('-o', '--heatmap_size', type=int, default=64, help='size of output heatmaps')
     parser.add_argument('-e', '--epochs', type=int, default=250, help='max number of epochs')
+    parser.add_argument('-g', '--gpu', type=int, default=0, help='which gpu to use')
     parser.add_argument('-bn', '--batch_norm', action='store_true', default=False)
     parser.add_argument('-exp', '--experiment', type=int, default=0, help='experiment number')
     # parser.add_argument('-s', '--steps', type=int, default=10000, help='steps per epoch')
@@ -36,8 +37,8 @@ def parse_command_line():
 
 def train():
     args = parse_command_line()
-    torch.backends.cudnn.enabled = True
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    # torch.backends.cudnn.enabled = False
+    device = torch.device("cuda:{}".format(args.gpu) if torch.cuda.is_available() else "cpu")
 
     scales = [0.03, 0.1, 0.3, 1.0]
 
@@ -45,6 +46,7 @@ def train():
     print("Batch size: ", args.batch_size)
     print("Num stacks: ", args.num_stacks)
     print("Input size: {} x {}".format(args.input_size, args.input_size))
+    print("Heatmap size: {} x {}".format(args.heatmap_size, args.heatmap_size))
     print("Training for {} epochs".format(args.epochs))
     print("Using BatchNorm: {}".format(args.batch_norm))
     print("Scales: ", scales)
