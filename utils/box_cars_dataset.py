@@ -4,10 +4,8 @@ import pickle
 import cv2
 import numpy as np
 
-import torch
-from torch.utils.data import Dataset
-from torchvision import transforms
-from utils.diamond_space import diamond_coords_from_original, original_coords_from_diamond
+from tensorflow import keras
+from utils.diamond_space import diamond_coords_from_original
 
 
 class GenerateHeatmap():
@@ -24,7 +22,7 @@ class GenerateHeatmap():
         self.R = np.array([[1, -1], [1, 1]])
 
     def __call__(self, vps):
-        hms = np.zeros(shape = (len(vps) * len(self.scales), self.output_res, self.output_res), dtype = np.float32)
+        hms = np.zeros(shape = (self.output_res, self.output_res, len(vps) * len(self.scales)), dtype = np.float32)
         for vp_idx, vp in enumerate(vps):
             for scale_idx, scale in enumerate(self.scales):
                 idx = len(self.scales) * vp_idx + scale_idx
@@ -47,12 +45,12 @@ class GenerateHeatmap():
                 cc, dd = max(0, ul[0]), min(br[0], self.output_res)
                 aa, bb = max(0, ul[1]), min(br[1], self.output_res)
 
-                hms[idx, aa:bb,cc:dd] = np.maximum(hms[idx, aa:bb, cc:dd], self.g[a:b, c:d])
+                hms[aa:bb, cc:dd, idx] = np.maximum(hms[aa:bb, cc:dd, idx], self.g[a:b, c:d])
         return hms
 
 
-class BoxCarsDataset(Dataset):
-    def __init__(self, path, split, img_size=128, heatmap_size=128, scales=(0.1, 0.3, 1.0, 3, 10.0), perspective_sigma=25.0, crop_delta=10):
+class BoxCarsDataset(keras.utils.Sequence):
+    def __init__(self, path, split, batch_size=32, img_size=128, heatmap_size=128, scales=(0.1, 0.3, 1.0, 3, 10.0), perspective_sigma=25.0, crop_delta=10):
         'Initialization'
         with open(os.path.join(path, 'dataset.pkl'), 'rb') as f:
             self.data = pickle.load(f, encoding="latin-1", fix_imports=True)
@@ -63,6 +61,8 @@ class BoxCarsDataset(Dataset):
         self.split = split
         self.img_dir = os.path.join(path, 'images')
 
+        self.batch_size = batch_size
+
         self.img_size = img_size
         self.heatmap_size = heatmap_size
         self.generate_heatmap = GenerateHeatmap(heatmap_size, scales)
@@ -71,7 +71,6 @@ class BoxCarsDataset(Dataset):
         self.crop_delta = crop_delta
 
         self.instance_list = []
-
 
         # generate split every tenth sample is validation - remove useless samples from atlas
         for s_idx, sample in enumerate(self.data['samples']):
@@ -88,15 +87,32 @@ class BoxCarsDataset(Dataset):
                     for i_idx, instance in enumerate(sample['instances']):
                         self.instance_list.append((s_idx, i_idx))
 
-
-
+        self.idxs = np.arange(len(self.instance_list))
+        if self.split == 'train':
+            np.random.shuffle(self.idxs)
 
     def __len__(self):
         'Denotes the total number of samples'
         # return len(self.instance_list)
-        return len(self.instance_list)
+        # return int(np.floor(len(self.instance_list) / self.batch_size))
+        return 100
 
-    def __getitem__(self, index):
+    def __getitem__(self, idx):
+        actual_idxs = self.idxs[idx * self.batch_size : (idx + 1) * self.batch_size]
+        imgs = []
+        heatmaps = []
+        for i in actual_idxs:
+            img, heatmap = self.get_single_item(i)
+            imgs.append(img)
+            heatmaps.append(heatmap)
+
+        return np.array(imgs), [np.array(heatmaps), np.array(heatmaps)]
+
+    def on_epoch_end(self):
+        if self.split == 'train':
+            np.random.shuffle(self.idxs)
+
+    def get_single_item(self, index):
         s_idx, i_idx = self.instance_list[index]
 
         sample = self.data['samples'][s_idx]
@@ -176,9 +192,10 @@ class BoxCarsDataset(Dataset):
         heatmap = self.generate_heatmap([warped_vp1, warped_vp2])
 
         out_img = warped_img / 255
+        out_heatmap = heatmap
         # out_img = transforms.ToTensor()(out_img)
-        out_img = torch.from_numpy(out_img).float()
-        out_heatmap = torch.from_numpy(heatmap).float()
+        # out_img = torch.from_numpy(out_img).float()
+        # out_heatmap = torch.from_numpy(heatmap).float()
 
         return out_img, out_heatmap
 
