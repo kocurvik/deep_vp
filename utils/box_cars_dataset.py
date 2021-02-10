@@ -94,8 +94,8 @@ class BoxCarsDataset(keras.utils.Sequence):
     def __len__(self):
         'Denotes the total number of samples'
         # return len(self.instance_list)
-        # return int(np.floor(len(self.instance_list) / self.batch_size))
-        return 100
+        return int(np.floor(len(self.instance_list) / self.batch_size))
+        # return 100
 
     def __getitem__(self, idx):
         actual_idxs = self.idxs[idx * self.batch_size : (idx + 1) * self.batch_size]
