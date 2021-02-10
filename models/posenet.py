@@ -23,7 +23,7 @@ class PoseNet(nn.Module):
         self.nstack = nstack
         if init_reduction == 4:
             self.pre = nn.Sequential(
-                Conv(3, 64, 3, 2, bn=True, relu=True),
+                Conv(3, 64, 7, 2, bn=True, relu=True),
                 Residual(64, 128),
                 Pool(2, 2),
                 Residual(128, 128),
@@ -31,9 +31,16 @@ class PoseNet(nn.Module):
             )
         elif init_reduction == 2:
             self.pre = nn.Sequential(
-                Conv(3, 64, 3, 1, bn=True, relu=True),
+                Conv(3, 64, 7, 1, bn=True, relu=True),
                 Residual(64, 128),
                 Pool(2,2),
+                Residual(128, 128),
+                Residual(128, inp_dim)
+            )
+        else:
+            self.pre = nn.Sequential(
+                Conv(3, 64, 7, 1, bn=True, relu=True),
+                Residual(64, 128),
                 Residual(128, 128),
                 Residual(128, inp_dim)
             )

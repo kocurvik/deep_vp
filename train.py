@@ -37,7 +37,7 @@ def parse_command_line():
 
 def train():
     args = parse_command_line()
-    # torch.backends.cudnn.enabled = False
+    torch.backends.cudnn.enabled = True
     device = torch.device("cuda:{}".format(args.gpu) if torch.cuda.is_available() else "cpu")
 
     scales = [0.03, 0.1, 0.3, 1.0]
