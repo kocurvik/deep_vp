@@ -19,6 +19,7 @@ def parse_command_line():
     parser.add_argument('-m', '--mobilenet', action='store_true', default=False)
     parser.add_argument('-c', '--channels', type=int, default=256, help='number of channels in network')
     parser.add_argument('-exp', '--experiment', type=int, default=0, help='experiment number')
+    parser.add_argument('-w', '--workers', type=int, default=1, help='number of workers for the fit function')
     # parser.add_argument('-s', '--steps', type=int, default=10000, help='steps per epoch')
     parser.add_argument('path')
     args = parser.parse_args()
@@ -39,6 +40,8 @@ def train():
     print("Channels: ", args.channels)
     print("Experiment number: ", args.experiment)
     print("Mobilenet version: ", args.mobilenet)
+    print("Workers: ", args.workers)
+    print("Use multiprocessing: ", args.workers > 1)
 
     if args.mobilenet:
         module = 'mobilenet'
@@ -71,7 +74,7 @@ def train():
     callbacks = [keras.callbacks.ModelCheckpoint(filepath=os.path.join(snapshot_dir_path, 'model.{epoch:03d}.h5')),
                  keras.callbacks.TensorBoard(log_dir=os.path.join('logs', snapshot_dir_name))]
 
-    model.fit_generator(train_dataset, validation_data=val_dataset, epochs=args.epochs, callbacks=callbacks, initial_epoch=args.resume, workers=2, use_multiprocessing=True)
+    model.fit_generator(train_dataset, validation_data=val_dataset, epochs=args.epochs, callbacks=callbacks, initial_epoch=args.resume, workers=args.workers, use_multiprocessing=args.workers > 1)
 
 
 if __name__ == '__main__':
