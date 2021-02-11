@@ -15,7 +15,7 @@ def parse_command_line():
     parser.add_argument('-i', '--input_size', type=int, default=128, help='size of input')
     parser.add_argument('-o', '--heatmap_size', type=int, default=64, help='size of output heatmaps')
     parser.add_argument('-e', '--epochs', type=int, default=50, help='max number of epochs')
-    parser.add_argument('-g', '--gpu', type=int, default=0, help='which gpu to use')
+    parser.add_argument('-g', '--gpu', type=str, default='0', help='which gpu to use')
     parser.add_argument('-m', '--mobilenet', action='store_true', default=False)
     parser.add_argument('-c', '--channels', type=int, default=256, help='number of channels in network')
     parser.add_argument('-exp', '--experiment', type=int, default=0, help='experiment number')
@@ -27,6 +27,8 @@ def parse_command_line():
 
 def train():
     args = parse_command_line()
+
+    os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
 
     scales = [0.03, 0.1, 0.3, 1.0]
 
