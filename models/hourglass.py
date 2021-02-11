@@ -82,10 +82,10 @@ def bottleneck_mobile(bottom, num_out_channels, block_name):
                                 name=block_name + 'skip')(bottom)
 
     # residual: 3 conv blocks,  [num_out_channels/2  -> num_out_channels/2 -> num_out_channels]
-    _x = keras.layers.SeparableConv2D(num_out_channels / 2, kernel_size=(1, 1), activation='relu', padding='same',
+    _x = keras.layers.SeparableConv2D(num_out_channels // 2, kernel_size=(1, 1), activation='relu', padding='same',
                          name=block_name + '_conv_1x1_x1')(bottom)
     _x = keras.layers.BatchNormalization()(_x)
-    _x = keras.layers.SeparableConv2D(num_out_channels / 2, kernel_size=(3, 3), activation='relu', padding='same',
+    _x = keras.layers.SeparableConv2D(num_out_channels // 2, kernel_size=(3, 3), activation='relu', padding='same',
                          name=block_name + '_conv_3x3_x2')(_x)
     _x = keras.layers.BatchNormalization()(_x)
     _x = keras.layers.SeparableConv2D(num_out_channels, kernel_size=(1, 1), activation='relu', padding='same',
