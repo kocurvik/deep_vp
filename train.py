@@ -17,6 +17,7 @@ def parse_command_line():
     parser.add_argument('-e', '--epochs', type=int, default=50, help='max number of epochs')
     parser.add_argument('-g', '--gpu', type=str, default='0', help='which gpu to use')
     parser.add_argument('-m', '--mobilenet', action='store_true', default=False)
+    parser.add_argument('--shutdown', action='store_true', default=False, help='shutdown the machine when done')
     parser.add_argument('-c', '--channels', type=int, default=256, help='number of channels in network')
     parser.add_argument('-exp', '--experiment', type=int, default=0, help='experiment number')
     parser.add_argument('-w', '--workers', type=int, default=1, help='number of workers for the fit function')
@@ -78,6 +79,8 @@ def train():
 
     model.fit_generator(train_dataset, validation_data=val_dataset, epochs=args.epochs, callbacks=callbacks, initial_epoch=args.resume, workers=args.workers, use_multiprocessing=args.workers > 1)
 
+    if args.shutdown:
+        os.system('sudo poweroff')
 
 if __name__ == '__main__':
     train()
