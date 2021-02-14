@@ -10,6 +10,7 @@ from utils.box_cars_dataset import BoxCarsDataset
 def parse_command_line():
     parser = argparse.ArgumentParser()
     parser.add_argument('-r', '--resume', type=int, default=0, help='resume from file')
+    parser.add_argument('-lr', '--lr', type=float, default=0.001, help='resume from file')
     parser.add_argument('-b', '--batch_size', type=int, default=4, help='batch size')
     parser.add_argument('-n', '--num_stacks', type=int, default=2, help='number of stacks')
     parser.add_argument('-i', '--input_size', type=int, default=128, help='size of input')
@@ -67,7 +68,9 @@ def train():
     if args.resume:
         model.load_weights(os.path.join(snapshot_dir_path, 'model.{:03d}.h5'.format(args.resume)))
 
-    model.compile('Adam', 'MSE', metrics=[heatmap_mean_accuracy(args.batch_size, args.heatmap_size, len(scales) * 2)])
+
+    adam = keras.optimizers.Adam(args.lr)
+    model.compile(adam, 'MSE', metrics=[heatmap_mean_accuracy(args.batch_size, args.heatmap_size, len(scales) * 2)])
 
     print(model.summary())
 
@@ -76,6 +79,8 @@ def train():
 
     callbacks = [keras.callbacks.ModelCheckpoint(filepath=os.path.join(snapshot_dir_path, 'model.{epoch:03d}.h5')),
                  keras.callbacks.TensorBoard(log_dir=os.path.join('logs', snapshot_dir_name))]
+
+    print("Starting training with lr: {}".format(args.lr))
 
     model.fit_generator(train_dataset, validation_data=val_dataset, epochs=args.epochs, callbacks=callbacks, initial_epoch=args.resume, workers=args.workers, use_multiprocessing=args.workers > 1)
 
