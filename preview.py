@@ -1,11 +1,15 @@
 import argparse
 import os
 
+import cv2
+import numpy as np
+
 from models.load_model import load_model
 from tensorflow import keras
 
-from models.hourglass import heatmap_mean_accuracy
+from models.hourglass import create_hourglass_network, heatmap_mean_accuracy
 from utils.box_cars_dataset import BoxCarsDataset
+from utils.diamond_space import heatmap_to_vp
 
 
 def parse_command_line():
@@ -28,40 +32,48 @@ def parse_command_line():
     args = parser.parse_args()
     return args
 
-def train():
+def preview():
     args = parse_command_line()
 
     os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
 
     scales = [0.03, 0.1, 0.3, 1.0]
 
-    model, snapshot_dir_name, snapshot_dir_path = load_model(args, scales)
+    model, _, _ = load_model(args, scales)
 
-    adam = keras.optimizers.Adam(args.lr)
-    model.compile(adam, 'MSE', metrics=[heatmap_mean_accuracy(args.batch_size, args.heatmap_size, len(scales) * 2)])
+    print("Model loaded")
 
-    print(model.summary())
+    print("Loading data")
 
-    print("Loading dataset!")
-    train_dataset = BoxCarsDataset(args.path, 'train', batch_size=args.batch_size, img_size=args.input_size, heatmap_size=args.heatmap_size, scales=scales)
-    print("Loaded training dataset with {} samples".format(len(train_dataset)))
-    val_dataset = BoxCarsDataset(args.path, 'val', batch_size=args.batch_size, img_size=args.input_size, heatmap_size=args.heatmap_size, scales=scales)
-    print("Loaded val dataset with {} samples".format(len(val_dataset)))
+    val_dataset = BoxCarsDataset(args.path, 'val', batch_size=1, img_size=args.input_size,
+                                 heatmap_size=args.heatmap_size, scales=scales)
+
+    print("Data loaded")
+
+    for i in range(len(val_dataset)):
+        X, y_gt = val_dataset[i]
+        y_pred = model.predict(X)
+
+        cv2.imshow("img", X[0])
+
+        for j, scale in enumerate(scales):
+            heatmap_gt = y_gt[-1][0, :, :, j + 4]
+            heatmap_pred = y_pred[-1][0, :, :, j + 4]
+
+            vp_gt = heatmap_to_vp(heatmap_gt, scale)
+            vp_pred = heatmap_to_vp(heatmap_pred, scale)
+
+            print("vp_gt: ", vp_gt)
+            print("vp_pred: ", vp_pred)
+
+            cv2.imshow("gt heatmap for scale: {}".format(scale), heatmap_gt)
+            cv2.imshow("pred heatmap for scale: {}".format(scale), heatmap_pred)
+
+        cv2.waitKey(0)
 
 
-    callbacks = [keras.callbacks.ModelCheckpoint(filepath=os.path.join(snapshot_dir_path, 'model.{epoch:03d}.h5')),
-                 keras.callbacks.TensorBoard(log_dir=os.path.join('logs', snapshot_dir_name))]
 
-    print("Workers: ", args.workers)
-    print("Use multiprocessing: ", args.workers > 1)
-    print("Starting training with lr: {}".format(args.lr))
-
-
-    model.fit_generator(train_dataset, validation_data=val_dataset, epochs=args.epochs, callbacks=callbacks, initial_epoch=args.resume, workers=args.workers, use_multiprocessing=args.workers > 1)
-
-    if args.shutdown:
-        os.system('sudo poweroff')
 
 
 if __name__ == '__main__':
-    train()
+    preview()
