@@ -5,7 +5,7 @@ import cv2
 import numpy as np
 
 from tensorflow import keras
-from utils.diamond_space import diamond_coords_from_original
+from utils.diamond_space import diamond_coords_from_original, vp_to_heatmap
 
 
 class GenerateHeatmap():
@@ -18,8 +18,6 @@ class GenerateHeatmap():
         y = x[:, np.newaxis]
         x0, y0 = 3 * self.sigma + 1, 3 * self.sigma + 1
         self.g = np.exp(- ((x - x0) ** 2 + (y - y0) ** 2) / (2 * self.sigma ** 2))
-        # self.R = np.array([[np.sqrt(2) / 2, -np.sqrt(2) / 2], [np.sqrt(2) / 2, np.sqrt(2) / 2]])
-        self.R = np.array([[1, -1], [1, 1]])
 
     def __call__(self, vps):
         hms = np.zeros(shape = (self.output_res, self.output_res, len(vps) * len(self.scales)), dtype = np.float32)
@@ -27,12 +25,11 @@ class GenerateHeatmap():
             for scale_idx, scale in enumerate(self.scales):
                 idx = len(self.scales) * vp_idx + scale_idx
 
-                vp_scaled = vp * scale
-                vp_diamond = diamond_coords_from_original(vp_scaled, 1.0)
+                vp_heatmap = vp_to_heatmap(vp, self.output_res, scale=scale)
 
                 # vp_heatmap = (vp_diamond + 0.5) * self.output_res
                 # vp_heatmap = ((self.R @ vp_diamond.T)) * (np.sqrt(2) / 2 * self.output_res) + self.output_res / 2
-                vp_heatmap = ((self.R @ vp_diamond.T) + 1.0) * self.output_res / 2
+                # self.R = np.array([[np.sqrt(2) / 2, -np.sqrt(2) / 2], [np.sqrt(2) / 2, np.sqrt(2) / 2]])
 
                 x, y = int(vp_heatmap[0]), int(vp_heatmap[1])
                 if x < 0 or y < 0 or x >= self.output_res or y >= self.output_res:
