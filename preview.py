@@ -10,7 +10,7 @@ from tensorflow import keras
 from keras_retinanet.models import load_model as load_od_model
 
 from models.hourglass import create_hourglass_network, heatmap_mean_accuracy
-from utils.box_cars_dataset import BoxCarsDataset
+from utils.diamond_dataset import DiamondBoxCarsDataset
 from utils.diamond_space import heatmap_to_vp, process_heatmap, process_heatmap_old, get_focal
 
 
