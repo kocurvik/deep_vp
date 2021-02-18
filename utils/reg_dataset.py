@@ -161,3 +161,21 @@ class RegBoxCarsDataset(keras.utils.Sequence):
         out_img = warped_img / 255
 
         return out_img, np.concatenate([warped_vp1, warped_vp2])
+
+
+if __name__ == '__main__':
+    path = 'D:/Skola/PhD/Data/BoxCars116k/'
+
+    scales = [0.03, 0.1, 0.3, 1.0]
+
+    d = RegBoxCarsDataset(path, 'val', img_size=512)
+
+    cum_heatmap = np.zeros([256, 256, 2*len(scales)])
+
+    for i in range(100):
+        # i = np.random.choice(len(d))
+        img, vp = d.get_single_item(i)
+        cv2.imshow("Img", img)
+        print(vp)
+
+        cv2.waitKey(0)

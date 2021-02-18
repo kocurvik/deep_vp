@@ -11,18 +11,19 @@ def train():
 
     os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
 
-    set_gpus(args.half)
+    set_gpus()
 
     model, loss, snapshot_dir_name, snapshot_dir_path = load_model(args)
 
     print("Loading dataset!")
     train_dataset = RegBoxCarsDataset(args.path, 'train', batch_size=args.batch_size, img_size=args.input_size)
-    print("Loaded training dataset with {} samples".format(len(train_dataset)))
+    print("Loaded training dataset with {} samples".format(len(train_dataset.instance_list)))
     val_dataset = RegBoxCarsDataset(args.path, 'val', batch_size=args.batch_size, img_size=args.input_size)
-    print("Loaded val dataset with {} samples".format(len(val_dataset)))
+    print("Loaded val dataset with {} samples".format(len(val_dataset.instance_list)))
 
-    callbacks = [keras.callbacks.ModelCheckpoint(filepath=os.path.join(snapshot_dir_path, 'model.{epoch:03d}.h5')),
-                 keras.callbacks.TensorBoard(log_dir=os.path.join('logs', snapshot_dir_name))]
+    # callbacks = [keras.callbacks.ModelCheckpoint(filepath=os.path.join(snapshot_dir_path, 'model.{epoch:03d}.h5')),
+    #              keras.callbacks.TensorBoard(log_dir=os.path.join('logs', snapshot_dir_name))]
+    callbacks = []
 
     print("Workers: ", args.workers)
     print("Use multiprocessing: ", args.workers > 1)
