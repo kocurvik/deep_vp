@@ -72,13 +72,19 @@ class DiamondBoxCarsDataset(keras.utils.Sequence):
         # generate split every tenth sample is validation - remove useless samples from atlas
         for s_idx, sample in enumerate(self.data['samples']):
             if s_idx % 10 == 0:
-                if self.split == 'train':
+                if self.split != 'val':
+                    self.atlas[s_idx] = None
+                else:
+                    for i_idx, instance in enumerate(sample['instances']):
+                        self.instance_list.append((s_idx, i_idx))
+            elif s_idx % 10 == 1:
+                if self.split != 'test':
                     self.atlas[s_idx] = None
                 else:
                     for i_idx, instance in enumerate(sample['instances']):
                         self.instance_list.append((s_idx, i_idx))
             else:
-                if self.split == 'val':
+                if self.split != 'train':
                     self.atlas[s_idx] = None
                 else:
                     for i_idx, instance in enumerate(sample['instances']):
