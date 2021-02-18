@@ -1,27 +1,10 @@
-import argparse
 import os
 
-from models.reg import load_model, vp1_dist, vp2_dist
+from models.reg import load_model, vp1_dist, vp2_dist, parse_command_line
 from tensorflow import keras
 from utils.gpu import set_gpus
 from utils.reg_dataset import RegBoxCarsDataset
 
-def parse_command_line():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-r', '--resume', type=int, default=0, help='resume from file')
-    parser.add_argument('-lr', '--lr', type=float, default=0.001, help='resume from file')
-    parser.add_argument('-b', '--batch_size', type=int, default=4, help='batch size')
-    parser.add_argument('-i', '--input_size', type=int, default=128, help='size of input')
-    parser.add_argument('-e', '--epochs', type=int, default=50, help='max number of epochs')
-    parser.add_argument('-g', '--gpu', type=str, default='0', help='which gpu to use')
-    parser.add_argument('-l', '--loss', type=str, default='mse', help='which gpu to use')
-    parser.add_argument('--shutdown', action='store_true', default=False, help='shutdown the machine when done')
-    parser.add_argument('--half', action='store_true', default=False, help='restrict GPU usage to 8 GB')
-    parser.add_argument('-exp', '--experiment', type=int, default=0, help='experiment number')
-    parser.add_argument('-w', '--workers', type=int, default=1, help='number of workers for the fit function')
-    parser.add_argument('path')
-    args = parser.parse_args()
-    return args
 
 def train():
     args = parse_command_line()

@@ -6,7 +6,7 @@ def set_gpus(half=False):
         try:
             for gpu in gpus:
                 if half:
-                    tf.config.experimental.set_virtual_device_configuration(gpus, [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=8*1024)])
+                    tf.config.experimental.set_virtual_device_configuration(gpu, [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=8*1024)])
                 else:
                     tf.config.experimental.set_memory_growth(gpu, True)
             logical_gpus = tf.config.experimental.list_logical_devices('GPU')
