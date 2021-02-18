@@ -133,16 +133,23 @@ class DiamondBoxCarsDataset(keras.utils.Sequence):
             rect_dst = rect_src
         else:
             rect_dst = rect_src + self.perspective_sigma * np.random.randn(*rect_src.shape)
-        rect_dst = 2 * rect_dst.astype(np.float32) + 100
+        rect_dst = 2.0 * rect_dst.astype(np.float32) #+ self.perspective_sigma * 4
 
         if np.random.rand() > 0.5:
             rect_src = np.array([[img.shape[1], 0], [0, 0], [0, img.shape[0]], [img.shape[1], img.shape[0]]],
                                 dtype=np.float32)
 
+        rect_dst[:, 0] -= np.min(rect_dst[:, 0]) - self.crop_delta
+        rect_dst[:, 1] -= np.min(rect_dst[:, 1]) - self.crop_delta
+
         M = cv2.getPerspectiveTransform(rect_src[:, :], rect_dst[:, :])
 
-        img_warped = cv2.warpPerspective(img, M, (900, 900), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE)
         bbox_warped = cv2.perspectiveTransform(bbox[:, np.newaxis, :], M)
+
+        max_x = int(np.max(bbox_warped[:, 0, 0])) + self.crop_delta
+        max_y = int(np.max(bbox_warped[:, 0, 1])) + self.crop_delta
+
+        img_warped = cv2.warpPerspective(img, M, (max_x, max_y), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE)
         vp1_warped = cv2.perspectiveTransform(vp1[np.newaxis, np.newaxis, :], M)
         vp2_warped = cv2.perspectiveTransform(vp2[np.newaxis, np.newaxis, :], M)
         # cv2.imshow("Warped", img_warped)
@@ -206,17 +213,16 @@ if __name__ == '__main__':
 
     cum_heatmap = np.zeros([2*len(scales), 256, 256])
 
-    for i in range(len(d)):
+    for i in range(1000):
         # i = np.random.choice(len(d))
-        img, heatmap = d.__getitem__(i)
-        cum_heatmap += heatmap.detach().numpy()
+        img, heatmap = d.get_single_item(i)
 
-        cv2.imshow("Img", img.detach().numpy())
+        cv2.imshow("Img", img)
         for vp_idx in range(2):
             for scale_idx, scale in enumerate(scales):
                 idx = len(scales) * vp_idx + scale_idx
                 cv2.imshow("Cummulative heatmap for vp{} at scale {}".format(vp_idx + 1, scale), cum_heatmap[idx, :, :] / np.max(cum_heatmap[idx, :, :]))
-        cv2.waitKey(1)
+        cv2.waitKey(0)
 
 
 
