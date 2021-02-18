@@ -29,7 +29,7 @@ def parse_command_line():
     parser.add_argument('-exp', '--experiment', type=int, default=0, help='experiment number')
     parser.add_argument('-w', '--workers', type=int, default=1, help='number of workers for the fit function')
     # parser.add_argument('-s', '--steps', type=int, default=10000, help='steps per epoch')
-    parser.add_argument('path')
+    # parser.add_argument('path')
     args = parser.parse_args()
     return args
 
@@ -85,6 +85,9 @@ def preview():
             for j, scale in enumerate(scales):
                 heatmap_vp1 = heatmap_pred[-1][0, :, :, j]
                 heatmap_vp2 = heatmap_pred[-1][0, :, :, j + 4]
+
+                print("Min vp2 ", np.min(heatmap_vp2))
+                print("Max vp2 ", np.max(heatmap_vp2))
 
                 vp1_box, vp1_dist = process_heatmap(heatmap_vp1, scale)
                 vp2_box, vp2_dist = process_heatmap(heatmap_vp2, scale)

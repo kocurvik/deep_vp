@@ -51,10 +51,10 @@ def load_model(args):
     outputs = []
     for i in range(args.num_stacks):
         backbone_out = backbone.outputs[i]
-        x =  keras.layers.GlobalAveragePooling2D()(backbone_out)
-        x = keras.layers.Dense(args.features // 2, activation='relu')(x)
-        x = keras.layers.Dense(args.features // 4, activation='relu')(x)
-        x = keras.layers.Dense(4)(x)
+        x =  keras.layers.GlobalAveragePooling2D(name='mlp_pool_{}'.format(i))(backbone_out)
+        x = keras.layers.Dense(args.features // 2, activation='relu', name='mlp_1_{}'.format(i))(x)
+        x = keras.layers.Dense(args.features // 4, activation='relu', name='mlp_2_{}'.format(i))(x)
+        x = keras.layers.Dense(4, name='mlp_out_{}'.format(i))(x)
         outputs.append(x)
 
     model = keras.models.Model(inputs=backbone.input, outputs=outputs)
