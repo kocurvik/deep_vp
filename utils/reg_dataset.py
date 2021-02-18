@@ -7,7 +7,7 @@ from tensorflow import keras
 
 
 class RegBoxCarsDataset(keras.utils.Sequence):
-    def __init__(self, path, split, batch_size=32, img_size=128, perspective_sigma=25.0, crop_delta=10):
+    def __init__(self, path, split, batch_size=32, img_size=128, num_stacks=2, perspective_sigma=25.0, crop_delta=10):
         'Initialization'
         with open(os.path.join(path, 'dataset.pkl'), 'rb') as f:
             self.data = pickle.load(f, encoding="latin-1", fix_imports=True)
@@ -22,6 +22,7 @@ class RegBoxCarsDataset(keras.utils.Sequence):
 
         self.img_size = img_size
 
+        self.num_stacks = num_stacks
         self.perspective_sigma = perspective_sigma
         self.crop_delta = crop_delta
 
@@ -60,14 +61,14 @@ class RegBoxCarsDataset(keras.utils.Sequence):
 
     def __getitem__(self, idx):
         actual_idxs = self.idxs[idx * self.batch_size : (idx + 1) * self.batch_size]
-        imgs = []
-        vps = []
-        for i in actual_idxs:
+        imgs = np.empty([self.batch_size, self.img_size, self.img_size, 3])
+        vps = np.empty([self.batch_size, 4])
+        for bi, i in enumerate(actual_idxs):
             img, vp = self.get_single_item(i)
-            imgs.append(img)
-            vps.append(vp)
+            imgs[bi] = img
+            vps[bi] = vp
 
-        return np.array(imgs), np.array(vps)
+        return imgs, [vps for _ in range(self.num_stacks)]
 
     def on_epoch_end(self):
         if self.split == 'train':
@@ -159,8 +160,9 @@ class RegBoxCarsDataset(keras.utils.Sequence):
         warped_vp2[1] /= (y_max - y_min) / 2.0
 
         out_img = warped_img / 255
+        out_vp = np.concatenate([warped_vp1, warped_vp2])
 
-        return out_img, np.concatenate([warped_vp1, warped_vp2])
+        return out_img, out_vp
 
 
 if __name__ == '__main__':

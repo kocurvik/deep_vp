@@ -48,12 +48,16 @@ def load_model(args):
     backbone = create_hourglass_network(args.features, args.num_stacks, inres=args.input_size, outres=args.heatmap_size,
                                      bottleneck=module, num_channels=args.channels)
 
-    model = keras.models.Sequential()
-    model.add(backbone)
-    model.add(keras.layers.GlobalAveragePooling2D())
-    model.add(keras.layers.Dense(args.features // 2, activation='relu'))
-    model.add(keras.layers.Dense(args.features // 4, activation='relu'))
-    model.add(keras.layers.Dense(4))
+    outputs = []
+    for i in range(args.num_stacks):
+        backbone_out = backbone.outputs[i]
+        x =  keras.layers.GlobalAveragePooling2D()(backbone_out)
+        x = keras.layers.Dense(args.features // 2, activation='relu')(x)
+        x = keras.layers.Dense(args.features // 4, activation='relu')(x)
+        x = keras.layers.Dense(4)(x)
+        outputs.append(x)
+
+    model = keras.models.Model(inputs=backbone.input, outputs=outputs)
 
     snapshot_dir_path = os.path.join('snapshots', snapshot_dir_name)
 
