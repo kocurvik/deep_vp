@@ -25,8 +25,7 @@ def load_model(args):
     elif args.loss == 'sl1':
         loss = keras.losses.huber
     else:
-        loss = keras.losses.mse
-
+        loss, loss_str = get_diamond_loss(args.loss)
 
     snapshot_dir_name = 'Reg50_{}i_{}_{}'.format(args.input_size, loss_str, args.experiment)
     snapshot_dir_path = os.path.join('snapshots', snapshot_dir_name)
@@ -42,9 +41,39 @@ def load_model(args):
 def vp1_dist(vp_gt, vp_pred):
     return tf.math.reduce_euclidean_norm(vp_gt[:, :1] - vp_pred[:, :1], axis=-1)
 
+
 def vp2_dist(vp_gt, vp_pred):
     return tf.math.reduce_euclidean_norm(vp_gt[:, 2:] - vp_pred[:, 2:], axis=-1)
 
+
+def get_diamond_loss(loss_arg):
+
+    scale = float(loss_arg)
+    loss_str = 'diamond{}'.format(scale)
+
+    def _loss(y_pred, y_gt):
+        vp1_gt = scale * y_gt[:, :2]
+        vp1_pred = scale * y_pred[:, :2]
+        vp2_gt = scale * y_gt[:, 2:]
+        vp2_pred = scale *y_pred[:, 2:]
+        
+        vp1_gt_dx = -1 / (tf.sign(vp1_gt[:, 0] * vp1_gt[:, 1]) * vp1_gt[:, 0] + vp1_gt[:, 1] + tf.sign(vp1_gt[:, 1]))
+        vp1_gt_dy = vp1_gt[:, 0] / (tf.sign(vp1_gt[:, 0] * vp1_gt[:, 1]) * vp1_gt[:, 0] + vp1_gt[:, 1] + tf.sign(vp1_gt[:, 1]))
+        vp1_pred_dx = -1 / (tf.sign(vp1_pred[:, 0] * vp1_pred[:, 1]) * vp1_pred[:, 0] + vp1_pred[:, 1] + tf.sign(vp1_pred[:, 1]))
+        vp1_pred_dy = vp1_pred[:, 0] / (tf.sign(vp1_pred[:, 0] * vp1_pred[:, 1]) * vp1_pred[:, 0] + vp1_pred[:, 1] + tf.sign(vp1_pred[:, 1]))
+        
+        vp2_gt_dx = -1 / (tf.sign(vp2_gt[:, 0] * vp2_gt[:, 1]) * vp2_gt[:, 0] + vp2_gt[:, 1] + tf.sign(vp2_gt[:, 1]))
+        vp2_gt_dy =  vp2_gt[:, 0] / (tf.sign(vp2_gt[:, 0] * vp2_gt[:, 1]) * vp2_gt[:, 0] + vp2_gt[:, 1] + tf.sign(vp2_gt[:, 1]))
+        vp2_pred_dx = -1 / (tf.sign(vp2_pred[:, 0] * vp2_pred[:, 1]) * vp2_pred[:, 0] + vp2_pred[:, 1] + tf.sign(vp2_pred[:, 1]))
+        vp2_pred_dy =  vp2_pred[:, 0] / (tf.sign(vp2_pred[:, 0] * vp2_pred[:, 1]) * vp2_pred[:, 0] + vp2_pred[:, 1] + tf.sign(vp2_pred[:, 1]))
+
+        l = (vp1_gt_dx - vp1_pred_dx) ** 2 + (vp1_gt_dy - vp1_pred_dy) ** 2 + (vp2_gt_dx - vp2_pred_dx) ** 2 + (vp2_gt_dy - vp2_pred_dy) ** 2
+        return l
+
+    return _loss, loss_str
+    
+
+    
 
 def parse_command_line():
     parser = argparse.ArgumentParser()
