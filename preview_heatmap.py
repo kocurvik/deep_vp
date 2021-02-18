@@ -4,13 +4,12 @@ import os
 import cv2
 import numpy as np
 
-from models.load_model import load_model
 from tensorflow import keras
 
 from keras_retinanet.models import load_model as load_od_model
 
-from models.hourglass import create_hourglass_network, heatmap_mean_accuracy
-from utils.diamond_dataset import DiamondBoxCarsDataset
+from models.hourglass import create_hourglass_network, heatmap_mean_accuracy, load_model
+from utils.heatmap_dataset import HeatmapBoxCarsDataset
 from utils.diamond_space import heatmap_to_vp, process_heatmap, process_heatmap_old, get_focal
 
 

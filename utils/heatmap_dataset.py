@@ -46,7 +46,7 @@ class GenerateHeatmap():
         return hms
 
 
-class DiamondBoxCarsDataset(keras.utils.Sequence):
+class HeatmapBoxCarsDataset(keras.utils.Sequence):
     def __init__(self, path, split, batch_size=32, img_size=128, heatmap_size=128, scales=(0.1, 0.3, 1.0, 3, 10.0), perspective_sigma=25.0, crop_delta=10):
         'Initialization'
         with open(os.path.join(path, 'dataset.pkl'), 'rb') as f:
@@ -216,7 +216,7 @@ if __name__ == '__main__':
 
     scales = [0.03, 0.1, 0.3, 1.0]
 
-    d = DiamondBoxCarsDataset(path, 'train', img_size=512, heatmap_size=256, scales=scales)
+    d = HeatmapBoxCarsDataset(path, 'train', img_size=512, heatmap_size=256, scales=scales)
 
     cum_heatmap = np.zeros([256, 256, 2*len(scales)])
 

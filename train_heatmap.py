@@ -1,11 +1,10 @@
 import argparse
 import os
 
-from models.load_model import load_model
 from tensorflow import keras
 
-from models.hourglass import heatmap_mean_accuracy
-from utils.diamond_dataset import DiamondBoxCarsDataset
+from models.hourglass import heatmap_mean_accuracy, load_model
+from utils.heatmap_dataset import HeatmapBoxCarsDataset
 from utils.gpu import set_gpus
 
 
@@ -46,9 +45,9 @@ def train():
     print(model.summary())
 
     print("Loading dataset!")
-    train_dataset = DiamondBoxCarsDataset(args.path, 'train', batch_size=args.batch_size, img_size=args.input_size, heatmap_size=args.heatmap_size, scales=scales)
+    train_dataset = HeatmapBoxCarsDataset(args.path, 'train', batch_size=args.batch_size, img_size=args.input_size, heatmap_size=args.heatmap_size, scales=scales)
     print("Loaded training dataset with {} samples".format(len(train_dataset)))
-    val_dataset = DiamondBoxCarsDataset(args.path, 'val', batch_size=args.batch_size, img_size=args.input_size, heatmap_size=args.heatmap_size, scales=scales)
+    val_dataset = HeatmapBoxCarsDataset(args.path, 'val', batch_size=args.batch_size, img_size=args.input_size, heatmap_size=args.heatmap_size, scales=scales)
     print("Loaded val dataset with {} samples".format(len(val_dataset)))
 
 
