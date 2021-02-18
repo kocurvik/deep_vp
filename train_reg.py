@@ -16,6 +16,7 @@ def parse_command_line():
     parser.add_argument('-g', '--gpu', type=str, default='0', help='which gpu to use')
     parser.add_argument('-l', '--loss', type=str, default='mse', help='which gpu to use')
     parser.add_argument('--shutdown', action='store_true', default=False, help='shutdown the machine when done')
+    parser.add_argument('--half', action='store_true', default=False, help='restrict GPU usage to 8 GB')
     parser.add_argument('-exp', '--experiment', type=int, default=0, help='experiment number')
     parser.add_argument('-w', '--workers', type=int, default=1, help='number of workers for the fit function')
     parser.add_argument('path')
@@ -27,7 +28,7 @@ def train():
 
     os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
 
-    set_gpus()
+    set_gpus(args.half)
 
     model, loss, snapshot_dir_name, snapshot_dir_path = load_model(args)
 
