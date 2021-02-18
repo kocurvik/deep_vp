@@ -21,9 +21,8 @@ def train():
     val_dataset = RegBoxCarsDataset(args.path, 'val', batch_size=args.batch_size, img_size=args.input_size)
     print("Loaded val dataset with {} samples".format(len(val_dataset.instance_list)))
 
-    # callbacks = [keras.callbacks.ModelCheckpoint(filepath=os.path.join(snapshot_dir_path, 'model.{epoch:03d}.h5')),
-    #              keras.callbacks.TensorBoard(log_dir=os.path.join('logs', snapshot_dir_name))]
-    callbacks = []
+    callbacks = [keras.callbacks.ModelCheckpoint(filepath=os.path.join(snapshot_dir_path, 'model.{epoch:03d}.h5')),
+                 keras.callbacks.TensorBoard(log_dir=os.path.join('logs', snapshot_dir_name))]
 
     print("Workers: ", args.workers)
     print("Use multiprocessing: ", args.workers > 1)
