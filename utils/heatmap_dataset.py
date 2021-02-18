@@ -152,8 +152,8 @@ class HeatmapBoxCarsDataset(keras.utils.Sequence):
 
         bbox_warped = cv2.perspectiveTransform(bbox[:, np.newaxis, :], M)
 
-        max_x = int(np.max(bbox_warped[:, 0, 0])) + self.crop_delta
-        max_y = int(np.max(bbox_warped[:, 0, 1])) + self.crop_delta
+        max_x = min(int(np.max(bbox_warped[:, 0, 0])) + self.crop_delta, 900)
+        max_y = min(int(np.max(bbox_warped[:, 0, 1])) + self.crop_delta, 900)
 
         img_warped = cv2.warpPerspective(img, M, (max_x, max_y), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE)
         vp1_warped = cv2.perspectiveTransform(vp1[np.newaxis, np.newaxis, :], M)
