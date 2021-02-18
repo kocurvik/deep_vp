@@ -175,7 +175,8 @@ class DiamondBoxCarsDataset(keras.utils.Sequence):
                 y_max = int(min(np.ceil(np.max(warped_bbox[:, 1])) + np.random.randint(-self.crop_delta, self.crop_delta), warped_img.shape[0]))
 
             else:
-                warped_img, warped_bbox, warped_vp1, warped_vp2 = self.random_perspective_transform(img, bbox, vp1, vp2, force_no_perspective=True)
+                # warped_img, warped_bbox, warped_vp1, warped_vp2 = self.random_perspective_transform(img, bbox, vp1, vp2, force_no_perspective=True)
+                warped_img, warped_bbox, warped_vp1, warped_vp2 = img, bbox, vp1, vp2
                 x_min = int(max(np.floor(np.min(warped_bbox[:, 0])), 0))
                 x_max = int(min(np.ceil(np.max(warped_bbox[:, 0])), warped_img.shape[1]))
                 y_min = int(max(np.floor(np.min(warped_bbox[:, 1])), 0))
@@ -217,17 +218,19 @@ if __name__ == '__main__':
 
     d = DiamondBoxCarsDataset(path, 'train', img_size=512, heatmap_size=256, scales=scales)
 
-    cum_heatmap = np.zeros([2*len(scales), 256, 256])
+    cum_heatmap = np.zeros([256, 256, 2*len(scales)])
 
     for i in range(1000):
         # i = np.random.choice(len(d))
         img, heatmap = d.get_single_item(i)
 
+        cum_heatmap += heatmap
+
         cv2.imshow("Img", img)
         for vp_idx in range(2):
             for scale_idx, scale in enumerate(scales):
                 idx = len(scales) * vp_idx + scale_idx
-                cv2.imshow("Cummulative heatmap for vp{} at scale {}".format(vp_idx + 1, scale), cum_heatmap[idx, :, :] / np.max(cum_heatmap[idx, :, :]))
+                cv2.imshow("Cummulative heatmap for vp{} at scale {}".format(vp_idx + 1, scale), cum_heatmap[:, :, idx] / np.max(cum_heatmap[:, :, idx]))
         cv2.waitKey(0)
 
 

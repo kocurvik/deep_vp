@@ -133,7 +133,8 @@ class RegBoxCarsDataset(keras.utils.Sequence):
                 y_max = int(min(np.ceil(np.max(warped_bbox[:, 1])) + np.random.randint(-self.crop_delta, self.crop_delta), warped_img.shape[0]))
 
             else:
-                warped_img, warped_bbox, warped_vp1, warped_vp2 = self.random_perspective_transform(img, bbox, vp1, vp2, force_no_perspective=True)
+                # warped_img, warped_bbox, warped_vp1, warped_vp2 = self.random_perspective_transform(img, bbox, vp1, vp2, force_no_perspective=True)
+                warped_img, warped_bbox, warped_vp1, warped_vp2 = img, bbox, vp1, vp2
                 x_min = int(max(np.floor(np.min(warped_bbox[:, 0])), 0))
                 x_max = int(min(np.ceil(np.max(warped_bbox[:, 0])), warped_img.shape[1]))
                 y_min = int(max(np.floor(np.min(warped_bbox[:, 1])), 0))
