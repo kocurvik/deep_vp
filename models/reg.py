@@ -12,15 +12,21 @@ def load_model(args):
 
     print("Initializing model")
     print("Batch size: ", args.batch_size)
-    print("Num stacks: ", args.num_stacks)
     print("Input size: {} x {}".format(args.input_size, args.input_size))
-    print("Heatmap size: {} x {}".format(args.heatmap_size, args.heatmap_size))
-    print("Use diamond coords for output: {}".format(args.diamond))
-    print("Scale for vp: {}".format(args.scale))
 
-    print("Heatmap feautures: ", args.features)
-    print("Channels: ", args.channels)
-    print("Mobilenet version: ", args.mobilenet)
+    if not args.resnet:
+        print("Using hourglass")
+        print("Num stacks: ", args.num_stacks)
+        print("Heatmap size: {} x {}".format(args.heatmap_size, args.heatmap_size))
+        print("Use diamond coords for output: {}".format(args.diamond))
+        print("Scale for vp: {}".format(args.scale))
+
+        print("Heatmap feautures: ", args.features)
+        print("Channels: ", args.channels)
+        print("Mobilenet version: ", args.mobilenet)
+
+    else:
+        print("Using ResNet50")
 
     print("Experiment number: ", args.experiment)
 
@@ -44,28 +50,42 @@ def load_model(args):
         module = 'bottleneck'
         module_str = 'b'
 
-    model_name = 'reg_diamond' if args.diamond else 'reg_orig'
 
-    snapshot_dir_name = 'VP1VP2_{}_{}_{}_{}in_{}out_{}_{}f_{}n_{}b_{}c_{}'.\
-        format(model_name, loss_str, module_str, args.input_size, args.heatmap_size, args.scale, args.features, args.num_stacks, args.batch_size, args.channels, args.experiment)
+    if not args.resnet:
+        model_name = 'reg_diamond' if args.diamond else 'reg_orig'
+        snapshot_dir_name = 'VP1VP2_{}_{}_{}_{}in_{}out_{}s_{}f_{}n_{}b_{}c_{}'.\
+            format(model_name, loss_str, module_str, args.input_size, args.heatmap_size, args.scale, args.features, args.num_stacks, args.batch_size, args.channels, args.experiment)
 
-    backbone = create_hourglass_network(args.features, args.num_stacks, inres=args.input_size, outres=args.heatmap_size,
-                                     bottleneck=module, num_channels=args.channels)
+        backbone = create_hourglass_network(args.features, args.num_stacks, inres=args.input_size, outres=args.heatmap_size,
+                                         bottleneck=module, num_channels=args.channels)
 
-    outputs = []
-    for i in range(args.num_stacks):
-        backbone_out = backbone.outputs[i]
-        x =  keras.layers.GlobalAveragePooling2D(name='mlp_pool_{}'.format(i))(backbone_out)
-        x = keras.layers.Dense(args.features // 2, activation='relu', name='mlp_1_{}'.format(i))(x)
-        x = keras.layers.Dense(args.features // 4, activation='relu', name='mlp_2_{}'.format(i))(x)
-        x = keras.layers.Dense(4, name='mlp_out_{}'.format(i))(x)
-        outputs.append(x)
+        outputs = []
+        for i in range(args.num_stacks):
+            backbone_out = backbone.outputs[i]
+            x =  keras.layers.GlobalAveragePooling2D(name='mlp_pool_{}'.format(i))(backbone_out)
+            x = keras.layers.Dense(args.features // 2, activation='relu', name='mlp_1_{}'.format(i))(x)
+            x = keras.layers.Dense(args.features // 4, activation='relu', name='mlp_2_{}'.format(i))(x)
+            x = keras.layers.Dense(4, name='mlp_out_{}'.format(i))(x)
+            outputs.append(x)
 
-    model = keras.models.Model(inputs=backbone.input, outputs=outputs)
+        model = keras.models.Model(inputs=backbone.input, outputs=outputs)
 
-    snapshot_dir_path = os.path.join('snapshots', snapshot_dir_name)
+    else:
+        if args.num_stacks != 1:
+            raise Exception("Cannot use ResNet with multiple outputs!")
+        model_name = 'resnet_diamond' if args.diamond else 'resnet_orig'
+        snapshot_dir_name = 'VP1VP2_{}_{}_{}in_{}s_{}b_{}'.\
+            format(model_name, loss_str, args.input_size,  args.scale, args.batch_size, args.experiment)
+
+        model = keras.models.Sequential()
+        backbone = ResNet50(input_shape=(args.input_size, args.input_size, 3), include_top=False, pooling='avg')
+        model.add(backbone)
+        model.add(keras.layers.Dense(128, activation='relu', name='mlp_1'))
+        model.add(keras.layers.Dense(64, activation='relu', name='mlp_2'))
+        model.add(keras.layers.Dense(4, name='mlp_out'))
 
     print("Dir name: ", snapshot_dir_name)
+    snapshot_dir_path = os.path.join('snapshots', snapshot_dir_name)
 
     if args.resume:
         resume_model_path = os.path.join(snapshot_dir_path, 'model.{:03d}.h5'.format(args.resume))
@@ -152,6 +172,7 @@ def parse_command_line():
     parser.add_argument('-e', '--epochs', type=int, default=50, help='max number of epochs')
     parser.add_argument('-g', '--gpu', type=str, default='0', help='which gpu to use')
     parser.add_argument('-m', '--mobilenet', action='store_true', default=False)
+    parser.add_argument('--resnet', action='store_true', default=False)
     parser.add_argument('--shutdown', action='store_true', default=False, help='shutdown the machine when done')
     parser.add_argument('-c', '--channels', type=int, default=256, help='number of channels in network')
     parser.add_argument('-exp', '--experiment', type=int, default=0, help='experiment number')
