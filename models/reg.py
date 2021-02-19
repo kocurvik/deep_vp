@@ -15,11 +15,14 @@ def load_model(args):
     print("Num stacks: ", args.num_stacks)
     print("Input size: {} x {}".format(args.input_size, args.input_size))
     print("Heatmap size: {} x {}".format(args.heatmap_size, args.heatmap_size))
-    print("Training for {} epochs".format(args.epochs))
-    print("Heatmap feauteres: ", args.features)
+    print("Use diamond coords for output: {}".format(args.diamond))
+    print("Scale for vp: {}".format(args.scale))
+
+    print("Heatmap feautures: ", args.features)
     print("Channels: ", args.channels)
-    print("Experiment number: ", args.experiment)
     print("Mobilenet version: ", args.mobilenet)
+
+    print("Experiment number: ", args.experiment)
 
     loss_str = args.loss
 
@@ -41,9 +44,10 @@ def load_model(args):
         module = 'bottleneck'
         module_str = 'b'
 
-    snapshot_dir_name = 'VP1VP2_reg_{}_{}_{}in_{}out_{}f_{}n_{}b_{}c_{}'.\
-        format(loss_str, module_str, args.input_size, args.heatmap_size, args.features, args.num_stacks, args.batch_size, args.channels, args.experiment)
+    model_name = 'reg_diamond' if args.diamond else 'reg_orig'
 
+    snapshot_dir_name = 'VP1VP2_{}_{}_{}_{}in_{}out_{}_{}f_{}n_{}b_{}c_{}'.\
+        format(model_name, loss_str, module_str, args.input_size, args.heatmap_size, args.scale, args.features, args.num_stacks, args.batch_size, args.channels, args.experiment)
 
     backbone = create_hourglass_network(args.features, args.num_stacks, inres=args.input_size, outres=args.heatmap_size,
                                      bottleneck=module, num_channels=args.channels)
@@ -71,13 +75,40 @@ def load_model(args):
     return model, loss, snapshot_dir_name, snapshot_dir_path
 
 
-def vp1_dist(vp_gt, vp_pred):
+def get_metrics(use_diamond=False, scale=1.0):
+    if use_diamond:
+        def vp1_dist(vp_gt, vp_pred):
+            return tf.divide(vp1_diamond_dist(vp_gt, vp_pred), scale)
+
+        def vp2_dist(vp_gt, vp_pred):
+            return tf.divide(vp2_diamond_dist(vp_gt, vp_pred), scale)
+
+    else:
+        def vp1_dist(vp_gt, vp_pred):
+            return tf.divide(tf.math.sqrt((vp_gt[:, 0] - vp_pred[:, 0]) ** 2 + (vp_gt[:, 1] - vp_pred[:, 1]) ** 2), scale)
+
+        def vp2_dist(vp_gt, vp_pred):
+            return tf.divide(tf.math.sqrt((vp_gt[:, 2] - vp_pred[:, 2]) ** 2 + (vp_gt[:, 3] - vp_pred[:, 3]) ** 2), scale)
+
+    return [vp1_dist, vp2_dist]
+
+
+def original_coords_from_diamond_tf(vp):
+    vp_d_x = tf.math.divide_no_nan(vp[:, 1], vp[:, 0])
+    vp_d_y = tf.math.divide_no_nan(tf.sign(vp[:, 0]) * vp[:, 0] + tf.sign(vp[:, 1]) * vp[:, 1] - 1, vp[:, 0])
+    return tf.stack([vp_d_x, vp_d_y], axis=-1)
+
+
+def vp1_diamond_dist(vp_d_gt, vp_d_pred):
+    vp_gt = original_coords_from_diamond_tf(vp_d_gt[:, :2])
+    vp_pred = original_coords_from_diamond_tf(vp_d_pred[:, :2])
     return tf.math.sqrt((vp_gt[:, 0] - vp_pred[:, 0]) ** 2 + (vp_gt[:, 1] - vp_pred[:, 1]) ** 2)
 
 
-def vp2_dist(vp_gt, vp_pred):
-    return tf.math.sqrt((vp_gt[:, 2] - vp_pred[:, 2]) ** 2 + (vp_gt[:, 3] - vp_pred[:, 3]) ** 2)
-
+def vp2_diamond_dist(vp_d_gt, vp_d_pred):
+    vp_gt = original_coords_from_diamond_tf(vp_d_gt[:, 2:])
+    vp_pred = original_coords_from_diamond_tf(vp_d_pred[:, 2:])
+    return tf.math.sqrt((vp_gt[:, 0] - vp_pred[:, 0]) ** 2 + (vp_gt[:, 1] - vp_pred[:, 1]) ** 2)
 
 def get_diamond_loss(loss_arg):
 
@@ -114,6 +145,8 @@ def parse_command_line():
     parser.add_argument('-n', '--num_stacks', type=int, default=2, help='number of stacks')
     parser.add_argument('-i', '--input_size', type=int, default=128, help='size of input')
     parser.add_argument('-o', '--heatmap_size', type=int, default=64, help='size of output heatmaps')
+    parser.add_argument('-s', '--scale', type=float, default=1.0, help='scale to use for vp')
+    parser.add_argument('-d', '--diamond', action='store_true', default=False, help='whether to use diamond space for output')
     parser.add_argument('-f', '--features', type=int, default=64, help='number heatmap channels')
     parser.add_argument('-l', '--loss', type=str, default='mse', help='which gpu to use')
     parser.add_argument('-e', '--epochs', type=int, default=50, help='max number of epochs')

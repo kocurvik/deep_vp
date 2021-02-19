@@ -4,10 +4,11 @@ import pickle
 import cv2
 import numpy as np
 from tensorflow import keras
+from utils.diamond_space import diamond_coords_from_original
 
 
 class RegBoxCarsDataset(keras.utils.Sequence):
-    def __init__(self, path, split, batch_size=32, img_size=128, num_stacks=2, perspective_sigma=25.0, crop_delta=10):
+    def __init__(self, path, split, batch_size=32, img_size=128, num_stacks=2, use_diamond=False, scale=1.0, perspective_sigma=25.0, crop_delta=10):
         'Initialization'
         with open(os.path.join(path, 'dataset.pkl'), 'rb') as f:
             self.data = pickle.load(f, encoding="latin-1", fix_imports=True)
@@ -19,10 +20,12 @@ class RegBoxCarsDataset(keras.utils.Sequence):
         self.img_dir = os.path.join(path, 'images')
 
         self.batch_size = batch_size
-
         self.img_size = img_size
-
         self.num_stacks = num_stacks
+
+        self.use_diamond = use_diamond
+        self.scale = scale
+
         self.perspective_sigma = perspective_sigma
         self.crop_delta = crop_delta
 
@@ -160,7 +163,16 @@ class RegBoxCarsDataset(keras.utils.Sequence):
         warped_vp2[1] /= (y_max - y_min) / 2.0
 
         out_img = warped_img / 255
-        out_vp = np.concatenate([warped_vp1, warped_vp2])
+
+        warped_vp1 *= self.scale
+        warped_vp2 *= self.scale
+
+        if self.use_diamond:
+            diamond_vp1 = diamond_coords_from_original(warped_vp1, 1.0)
+            diamond_vp2 = diamond_coords_from_original(warped_vp2, 1.0)
+            out_vp = np.concatenate([diamond_vp1, diamond_vp2])
+        else:
+            out_vp = np.concatenate([warped_vp1, warped_vp2])
 
         return out_img, out_vp
 
