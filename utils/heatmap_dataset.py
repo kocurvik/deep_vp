@@ -5,7 +5,7 @@ import cv2
 import numpy as np
 
 from tensorflow import keras
-from utils.diamond_space import diamond_coords_from_original, vp_to_heatmap
+from utils.diamond_space import diamond_coords_from_original, vp_to_heatmap, heatmap_to_orig
 
 
 class GenerateHeatmap():
@@ -62,7 +62,14 @@ class HeatmapBoxCarsDataset(keras.utils.Sequence):
 
         self.img_size = img_size
         self.heatmap_size = heatmap_size
-        self.generate_heatmap = GenerateHeatmap(heatmap_size, scales)
+
+        self.orig_coord_heatmaps = []
+        self.scales = scales
+        for scale in scales:
+            orig_coord_heatmap = heatmap_to_orig(heatmap_size, scale=scale)
+            # make nans inf to calc inf distance
+            orig_coord_heatmap[np.isnan(orig_coord_heatmap)] = np.inf
+            self.orig_coord_heatmaps.append(orig_coord_heatmap)
 
         self.perspective_sigma = perspective_sigma
         self.crop_delta = crop_delta
@@ -162,6 +169,25 @@ class HeatmapBoxCarsDataset(keras.utils.Sequence):
 
         return img_warped, bbox_warped[:, 0, :], vp1_warped[0, 0], vp2_warped[0, 0]
 
+    def generate_heatmaps(self, vps):
+        heatmaps = np.empty([self.heatmap_size, self.heatmap_size, len(vps) * len(self.orig_coord_heatmaps)])
+        for i, vp in enumerate(vps):
+            for j, orig_coord_heatmap in enumerate(self.orig_coord_heatmaps):
+                # exp(- 1/2 * (d/sigma)**2)
+                # vp_heatmap_int = np.round(vp_to_heatmap(vp, self.heatmap_size, scale=self.scales[j])).astype(np.int)
+                # i_min, i_max = max(vp_heatmap_int[0] - 1, 0), min(vp_heatmap_int[0] + 2, self.heatmap_size)
+                # j_min, j_max = max(vp_heatmap_int[1] - 1, 0), min(vp_heatmap_int[1] + 2, self.heatmap_size)
+                # neigh_dists = np.linalg.norm(orig_coord_heatmap[i_min: i_max, j_min: j_max, :] - vp[np.newaxis, np.newaxis, :], axis=-1)
+                # sigma_dist = np.amin(neigh_dists[neigh_dists != np.amin(neigh_dists)])
+                # neg_half_times_inv_sigma_sqr = - 8.0 / sigma_dist ** 2
+
+                d_sqr = np.sum((orig_coord_heatmap - vp[np.newaxis, np.newaxis, :]) ** 2, axis=-1)
+                h = np.exp(- d_sqr / np.min(d_sqr))
+                # heatmaps[:, :, i * len(self.orig_coord_heatmaps) + j] = np.exp(neg_half_times_inv_sigma_sqr * d_sqr)
+                heatmaps[:, :, i * len(self.orig_coord_heatmaps) + j] = h / (np.sum(h) + 1e-8)
+
+        return heatmaps
+
     def generate_item(self, img, bbox, vp1, vp2):
         tries = 0
 
@@ -200,38 +226,63 @@ class HeatmapBoxCarsDataset(keras.utils.Sequence):
         warped_vp1[1] /= (y_max - y_min) / 2.0
         warped_vp2[1] /= (y_max - y_min) / 2.0
 
-        heatmap = self.generate_heatmap([warped_vp1, warped_vp2])
+        heatmaps = self.generate_heatmaps([warped_vp1, warped_vp2])
 
         out_img = warped_img / 255
-        out_heatmap = heatmap
+        out_heatmaps = heatmaps
         # out_img = transforms.ToTensor()(out_img)
         # out_img = torch.from_numpy(out_img).float()
         # out_heatmap = torch.from_numpy(heatmap).float()
 
-        return out_img, out_heatmap
+        return out_img, out_heatmaps
 
+
+def get_mean_heatmap_vp(heatmap, orig_coord_heatmap):
+    vp_x_avg = np.average(orig_coord_heatmap[:, :, 0], weights=heatmap)
+    vp_y_avg = np.average(orig_coord_heatmap[:, :, 1], weights=heatmap)
+    vp_x_std = np.sqrt(np.average((orig_coord_heatmap[:, :, 0] - vp_x_avg) ** 2, weights=heatmap))
+    vp_y_std = np.sqrt(np.average((orig_coord_heatmap[:, :, 1] - vp_y_avg) ** 2, weights=heatmap))
+
+    return np.array([vp_x_avg, vp_y_avg]), np.array([vp_x_std, vp_y_std])
 
 if __name__ == '__main__':
     path = 'D:/Skola/PhD/Data/BoxCars116k/'
 
     scales = [0.03, 0.1, 0.3, 1.0]
+    # scales = [0.1, 1.0]
 
-    d = HeatmapBoxCarsDataset(path, 'train', img_size=512, heatmap_size=256, scales=scales)
+    orig_coord_heatmaps = []
+    for scale in scales:
+        orig_coord_heatmap = heatmap_to_orig(64, scale=scale)
+        # make nans inf to calc inf distance
+        orig_coord_heatmap[np.isnan(orig_coord_heatmap)] = 0
+        orig_coord_heatmap[np.isinf(orig_coord_heatmap)] = 0
+        orig_coord_heatmaps.append(orig_coord_heatmap)
 
-    cum_heatmap = np.zeros([256, 256, 2*len(scales)])
+    d = HeatmapBoxCarsDataset(path, 'train', img_size=512, heatmap_size=64, scales=scales)
 
-    for i in range(1000):
-        # i = np.random.choice(len(d))
+    cum_heatmap = np.zeros([64, 64, 2*len(scales)])
+
+    for _ in range(10000):
+        i = np.random.choice(len(d.instance_list))
         img, heatmap = d.get_single_item(i)
 
         cum_heatmap += heatmap
+
+        print(np.sum(heatmap))
 
         cv2.imshow("Img", img)
         for vp_idx in range(2):
             for scale_idx, scale in enumerate(scales):
                 idx = len(scales) * vp_idx + scale_idx
                 cv2.imshow("Cummulative heatmap for vp{} at scale {}".format(vp_idx + 1, scale), cum_heatmap[:, :, idx] / np.max(cum_heatmap[:, :, idx]))
-        cv2.waitKey(0)
+                cv2.imshow("Heatmap for vp{} at scale {}".format(vp_idx + 1, scale), heatmap[:, :, idx])
+
+                vp, std = get_mean_heatmap_vp(heatmap[:, :, idx], orig_coord_heatmaps[scale_idx])
+
+                print(vp, std)
+
+        cv2.waitKey(1)
 
 
 

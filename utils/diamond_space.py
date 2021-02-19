@@ -23,12 +23,13 @@ def original_coords_from_diamond(p, d, return_homogenous=False):
     p_original = np.array([d * p[1], np.sign(p[0]) * d * p[0] + np.sign(p[1]) * d * p[1] - d**2 * p[2], p[0]])
     if return_homogenous:
         return p_original
+
     return p_original[:2] / p_original[2]
 
 
 def heatmap_to_vp(vp_heatmap, res, scale=1.0):
     Rinv = np.linalg.inv(np.array([[1, -1], [1, 1]]))
-    vp_diamond = Rinv @ (2 / res * vp_heatmap - 1.0)
+    vp_diamond = Rinv @ (2 / (res - 1) * vp_heatmap - 1.0)
     vp_scaled = original_coords_from_diamond(vp_diamond, 1.0)
     vp = vp_scaled / scale
     return vp
@@ -38,7 +39,7 @@ def vp_to_heatmap(vp, res, scale=1.0):
     vp_scaled = vp * scale
     vp_diamond = diamond_coords_from_original(vp_scaled, 1.0)
     R = np.array([[1, -1], [1, 1]])
-    vp_heatmap = ((R @ vp_diamond.T) + 1.0) * res / 2
+    vp_heatmap = ((R @ vp_diamond.T) + 1.0) * (res - 1) / 2
     return vp_heatmap
 
 
@@ -46,7 +47,7 @@ def heatmap_to_orig(res, scale=1.0):
     heatmap_orig = np.empty([res, res, 2], dtype=np.float)
     for i in range(res):
         for j in range(res):
-            heatmap_orig[j, i] = heatmap_to_vp(np.array([i, j],dtype=np.float), res, scale)
+            heatmap_orig[i, j] = heatmap_to_vp(np.array([i, j], dtype=np.float), res, scale)
 
     return heatmap_orig
 
