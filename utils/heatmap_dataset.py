@@ -182,7 +182,7 @@ class HeatmapBoxCarsDataset(keras.utils.Sequence):
                 # neg_half_times_inv_sigma_sqr = - 8.0 / sigma_dist ** 2
 
                 d_sqr = np.sum((orig_coord_heatmap - vp[np.newaxis, np.newaxis, :]) ** 2, axis=-1)
-                h = np.exp(- d_sqr / np.min(d_sqr))
+                h = np.exp(- d_sqr / (np.min(d_sqr) + 1e-8))
                 # heatmaps[:, :, i * len(self.orig_coord_heatmaps) + j] = np.exp(neg_half_times_inv_sigma_sqr * d_sqr)
                 heatmaps[:, :, i * len(self.orig_coord_heatmaps) + j] = h / (np.sum(h) + 1e-8)
 
