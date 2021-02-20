@@ -279,7 +279,7 @@ def parse_command_line():
     parser.add_argument('--shutdown', action='store_true', default=False, help='shutdown the machine when done')
     parser.add_argument('-c', '--channels', type=int, default=256, help='number of channels in network')
     parser.add_argument('-exp', '--experiment', type=int, default=0, help='experiment number')
-    parser.add_argument('-expr', '--experiment-resume', type=int, default=None, help='experiment number')
+    parser.add_argument('-expr', '--experiment-resume', type=int, default=None, help='experiment number to resume from')
     parser.add_argument('-w', '--workers', type=int, default=1, help='number of workers for the fit function')
     # parser.add_argument('-s', '--steps', type=int, default=10000, help='steps per epoch')
     parser.add_argument('path')
