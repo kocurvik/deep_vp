@@ -249,7 +249,16 @@ def load_model(args, scales):
                                      bottleneck=module, num_channels=args.channels)
 
     if args.resume:
-        resume_model_path = os.path.join(snapshot_dir_path, 'model.{:03d}.h5'.format(args.resume))
+
+
+
+        if args.experiment_resume is None:
+            args.experiment_resume = args.experiment
+
+        resume_dir_name = 'VP1VP2{}_{}in_{}out_{}s_{}n_{}b_{}c_{}'.\
+            format(module_str, args.input_size, args.heatmap_size, len(scales), args.num_stacks, args.batch_size, args.channels, args.experiment_resume)
+
+        resume_model_path = os.path.join(resume_dir_name, 'model.{:03d}.h5'.format(args.resume))
         print("Loading model", resume_model_path)
         model.load_weights(resume_model_path)
 
@@ -270,6 +279,7 @@ def parse_command_line():
     parser.add_argument('--shutdown', action='store_true', default=False, help='shutdown the machine when done')
     parser.add_argument('-c', '--channels', type=int, default=256, help='number of channels in network')
     parser.add_argument('-exp', '--experiment', type=int, default=0, help='experiment number')
+    parser.add_argument('-expr', '--experiment-resume', type=int, default=None, help='experiment number')
     parser.add_argument('-w', '--workers', type=int, default=1, help='number of workers for the fit function')
     # parser.add_argument('-s', '--steps', type=int, default=10000, help='steps per epoch')
     parser.add_argument('path')
