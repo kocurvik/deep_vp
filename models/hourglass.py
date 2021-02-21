@@ -227,6 +227,7 @@ def load_model(args, scales):
     print("Channels: ", args.channels)
     print("Experiment number: ", args.experiment)
     print("Mobilenet version: ", args.mobilenet)
+    print("Heatmap distribution constructed in original coords: ", args.peak_original)
 
     if args.mobilenet:
         module = 'mobilenet'
