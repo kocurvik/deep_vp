@@ -31,7 +31,7 @@ class GenerateHeatmap():
                 # vp_heatmap = ((self.R @ vp_diamond.T)) * (np.sqrt(2) / 2 * self.output_res) + self.output_res / 2
                 # self.R = np.array([[np.sqrt(2) / 2, -np.sqrt(2) / 2], [np.sqrt(2) / 2, np.sqrt(2) / 2]])
 
-                x, y = int(np.round(vp_heatmap[0])), int(np.round(vp_heatmap[1]))
+                x, y = int(vp_heatmap[0]), int(vp_heatmap[1])
                 if x < 0 or y < 0 or x >= self.output_res or y >= self.output_res:
                     continue
 
