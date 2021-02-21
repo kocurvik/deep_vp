@@ -24,9 +24,9 @@ def train():
     print(model.summary())
 
     print("Loading dataset!")
-    train_dataset = HeatmapBoxCarsDataset(args.path, 'train', batch_size=args.batch_size, img_size=args.input_size, heatmap_size=args.heatmap_size, scales=scales)
+    train_dataset = HeatmapBoxCarsDataset(args.path, 'train', batch_size=args.batch_size, img_size=args.input_size, heatmap_size=args.heatmap_size, scales=scales, peak_original=args.peak_original)
     print("Loaded training dataset with {} samples".format(len(train_dataset.instance_list)))
-    val_dataset = HeatmapBoxCarsDataset(args.path, 'val', batch_size=args.batch_size, img_size=args.input_size, heatmap_size=args.heatmap_size, scales=scales)
+    val_dataset = HeatmapBoxCarsDataset(args.path, 'val', batch_size=args.batch_size, img_size=args.input_size, heatmap_size=args.heatmap_size, scales=scales, peak_original=args.peak_original)
     print("Loaded val dataset with {} samples".format(len(val_dataset.instance_list)))
 
 

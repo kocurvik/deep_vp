@@ -70,10 +70,10 @@ def process_heatmap(heatmap, scale):
 
 def process_heatmap_old(heatmap, scale):
     max_heatmap = heatmap.max()
-    vp_heatmap_max = np.flip(np.array(np.unravel_index(heatmap.argmax(), heatmap.shape)))
+    vp_heatmap_max = np.array(np.unravel_index(heatmap.argmax(), heatmap.shape))
     vp_max = heatmap_to_vp(vp_heatmap_max, heatmap.shape[0], scale=scale)
 
-    vps_heatmap_plausible = np.flip(np.vstack(np.where(heatmap > 0.8 * max_heatmap)).T)
+    vps_heatmap_plausible = np.vstack(np.where(heatmap > 0.8 * max_heatmap)).T
     dists = [np.linalg.norm(vp_max - heatmap_to_vp(vp, heatmap.shape[0], scale=scale)) for vp in vps_heatmap_plausible]
     mean_dist = np.mean(dists) / np.linalg.norm(vp_max)
 

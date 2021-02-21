@@ -5,7 +5,7 @@ import cv2
 import numpy as np
 
 from tensorflow import keras
-from utils.diamond_space import diamond_coords_from_original, vp_to_heatmap, heatmap_to_orig
+from utils.diamond_space import diamond_coords_from_original, vp_to_heatmap, heatmap_to_orig, process_heatmap_old
 
 
 class GenerateHeatmap():
@@ -31,12 +31,12 @@ class GenerateHeatmap():
                 # vp_heatmap = ((self.R @ vp_diamond.T)) * (np.sqrt(2) / 2 * self.output_res) + self.output_res / 2
                 # self.R = np.array([[np.sqrt(2) / 2, -np.sqrt(2) / 2], [np.sqrt(2) / 2, np.sqrt(2) / 2]])
 
-                x, y = int(vp_heatmap[0]), int(vp_heatmap[1])
+                x, y = int(np.round(vp_heatmap[0])), int(np.round(vp_heatmap[1]))
                 if x < 0 or y < 0 or x >= self.output_res or y >= self.output_res:
                     continue
 
-                ul = int(x - 3*self.sigma - 1), int(y - 3*self.sigma - 1)
-                br = int(x + 3*self.sigma + 2), int(y + 3*self.sigma + 2)
+                ul = int(y - 3*self.sigma - 1), int(x - 3*self.sigma - 1)
+                br = int(y + 3*self.sigma + 2), int(x + 3*self.sigma + 2)
                 c, d = max(0, -ul[0]), min(br[0], self.output_res) - ul[0]
                 a, b = max(0, -ul[1]), min(br[1], self.output_res) - ul[1]
                 cc, dd = max(0, ul[0]), min(br[0], self.output_res)
@@ -47,7 +47,7 @@ class GenerateHeatmap():
 
 
 class HeatmapBoxCarsDataset(keras.utils.Sequence):
-    def __init__(self, path, split, batch_size=32, img_size=128, heatmap_size=128, scales=(0.1, 0.3, 1.0, 3, 10.0), perspective_sigma=25.0, crop_delta=10):
+    def __init__(self, path, split, batch_size=32, img_size=128, heatmap_size=128, scales=(0.1, 0.3, 1.0, 3, 10.0), peak_original=False, perspective_sigma=25.0, crop_delta=10):
         'Initialization'
         with open(os.path.join(path, 'dataset.pkl'), 'rb') as f:
             self.data = pickle.load(f, encoding="latin-1", fix_imports=True)
@@ -63,13 +63,17 @@ class HeatmapBoxCarsDataset(keras.utils.Sequence):
         self.img_size = img_size
         self.heatmap_size = heatmap_size
 
-        self.orig_coord_heatmaps = []
         self.scales = scales
-        for scale in scales:
-            orig_coord_heatmap = heatmap_to_orig(heatmap_size, scale=scale)
-            # make nans inf to calc inf distance
-            orig_coord_heatmap[np.isnan(orig_coord_heatmap)] = np.inf
-            self.orig_coord_heatmaps.append(orig_coord_heatmap)
+
+        if peak_original:
+            self.orig_coord_heatmaps = []
+            for scale in scales:
+                orig_coord_heatmap = heatmap_to_orig(heatmap_size, scale=scale)
+                # make nans inf to calc inf distance
+                orig_coord_heatmap[np.isnan(orig_coord_heatmap)] = np.inf
+                self.orig_coord_heatmaps.append(orig_coord_heatmap)
+        else:
+            self.generate_heatmaps = GenerateHeatmap(self.heatmap_size, self.scales)
 
         self.perspective_sigma = perspective_sigma
         self.crop_delta = crop_delta
@@ -251,6 +255,7 @@ if __name__ == '__main__':
     scales = [0.03, 0.1, 0.3, 1.0]
     heatmap_out = 128
     # scales = [0.1, 1.0]
+    peak_original = False
 
     orig_coord_heatmaps = []
     for scale in scales:
@@ -260,7 +265,7 @@ if __name__ == '__main__':
         orig_coord_heatmap[np.isinf(orig_coord_heatmap)] = 0
         orig_coord_heatmaps.append(orig_coord_heatmap)
 
-    d = HeatmapBoxCarsDataset(path, 'train', img_size=512, heatmap_size=heatmap_out, scales=scales)
+    d = HeatmapBoxCarsDataset(path, 'train', img_size=128, heatmap_size=heatmap_out, scales=scales, peak_original=peak_original)
 
     cum_heatmap = np.zeros([heatmap_out, heatmap_out, 2*len(scales)])
 
@@ -278,8 +283,11 @@ if __name__ == '__main__':
                 idx = len(scales) * vp_idx + scale_idx
                 cv2.imshow("Cummulative heatmap for vp{} at scale {}".format(vp_idx + 1, scale), cum_heatmap[:, :, idx] / np.max(cum_heatmap[:, :, idx]))
                 cv2.imshow("Heatmap for vp{} at scale {}".format(vp_idx + 1, scale), heatmap[:, :, idx]/np.max(heatmap[:, :, idx]))
+                if peak_original:
+                    vp, std = get_mean_heatmap_vp(heatmap[:, :, idx], orig_coord_heatmaps[scale_idx])
+                else:
+                    vp, std  = process_heatmap_old(heatmap[:, :, idx], scale)
 
-                vp, std = get_mean_heatmap_vp(heatmap[:, :, idx], orig_coord_heatmaps[scale_idx])
 
                 print(vp, std)
 
