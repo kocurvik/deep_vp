@@ -258,8 +258,11 @@ def load_model(args, scales):
         if args.experiment_resume is None:
             args.experiment_resume = args.experiment
 
-        resume_dir_name = 'VP1VP2{}_{}in_{}out_{}s_{}n_{}b_{}c_{}'.\
-            format(module_str, args.input_size, args.heatmap_size, len(scales), args.num_stacks, args.batch_size, args.channels, args.experiment_resume)
+        snapshot_dir_name = 'VP1VP2{}_{}_{}in_{}out_{}s_{}n_{}b_{}c_{}'.format(module_str, peak_str, args.input_size,
+                                                                               args.heatmap_size,
+                                                                               len(scales), args.num_stacks,
+                                                                               args.batch_size,
+                                                                               args.channels, args.experiment_resume)
 
         resume_model_path = os.path.join(resume_dir_name, 'model.{:03d}.h5'.format(args.resume))
         print("Loading model", resume_model_path)
