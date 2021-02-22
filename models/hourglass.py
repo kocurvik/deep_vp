@@ -258,7 +258,7 @@ def load_model(args, scales):
         if args.experiment_resume is None:
             args.experiment_resume = args.experiment
 
-        snapshot_dir_name = 'VP1VP2{}_{}_{}in_{}out_{}s_{}n_{}b_{}c_{}'.format(module_str, peak_str, args.input_size,
+        resume_dir_name = 'VP1VP2{}_{}_{}in_{}out_{}s_{}n_{}b_{}c_{}'.format(module_str, peak_str, args.input_size,
                                                                                args.heatmap_size,
                                                                                len(scales), args.num_stacks,
                                                                                args.batch_size,
