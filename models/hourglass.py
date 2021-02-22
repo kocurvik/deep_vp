@@ -252,9 +252,6 @@ def load_model(args, scales):
                                      bottleneck=module, num_channels=args.channels)
 
     if args.resume:
-
-
-
         if args.experiment_resume is None:
             args.experiment_resume = args.experiment
 
@@ -264,7 +261,7 @@ def load_model(args, scales):
                                                                                args.batch_size,
                                                                                args.channels, args.experiment_resume)
 
-        resume_model_path = os.path.join(resume_dir_name, 'model.{:03d}.h5'.format(args.resume))
+        resume_model_path = os.path.join('snapshots', resume_dir_name, 'model.{:03d}.h5'.format(args.resume))
         print("Loading model", resume_model_path)
         model.load_weights(resume_model_path)
 
