@@ -25,7 +25,7 @@ def train():
     val_dataset = RegBoxCarsDataset(args.path, 'val', batch_size=args.batch_size, img_size=args.input_size, use_diamond=args.diamond, scale=args.scale)
     print("Loaded val dataset with {} samples".format(len(val_dataset.instance_list)))
 
-    callbacks = [keras.callbacks.ModelCheckpoint(filepath=os.path.join(snapshot_dir_path, 'model.{epoch:03d}.h5'), save_best_only=True),
+    callbacks = [keras.callbacks.ModelCheckpoint(filepath=os.path.join(snapshot_dir_path, 'model.{epoch:03d}.h5'), save_best_only=False),
                  keras.callbacks.TensorBoard(log_dir=os.path.join('logs', snapshot_dir_name))]
 
     print("Training for {} epochs".format(args.epochs))
