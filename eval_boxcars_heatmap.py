@@ -18,7 +18,7 @@ def eval():
     model, snapshot_dir_name, _ = load_model(args, scales)
     print("Heatmap model loaded")
 
-    test_dataset = RegBoxCarsDataset(args.path, 'test', batch_size=args.bb, img_size=args.input_size, num_stacks=1,
+    test_dataset = RegBoxCarsDataset(args.path, 'test', batch_size=args.batch_size_eval, img_size=args.input_size, num_stacks=1,
                                      use_diamond=False)
 
     gt_vp_list = []
