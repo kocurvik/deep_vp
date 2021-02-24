@@ -61,7 +61,10 @@ def eval():
     print("Median vp2 abs distance: {}".format(np.nanmedian(vp2_d[:, vp2_var_idx])))
     print("Median vp1 rel distance: {}".format(np.nanmedian(vp1_d[:, vp1_var_idx] / vp1_gt_norm)))
     print("Median vp2 rel distance: {}".format(np.nanmedian(vp2_d[:, vp2_var_idx] / vp2_gt_norm)))
-    
+
+    print("Hist for vp1 var selection: ", ['scale {} : {}, '.format(scale, np.sum(vp1_var_idx == j)) for j, scale in enumerate(scales)])
+    print("Hist for vp2 var selection: ", ['scale {} : {}, '.format(scale, np.sum(vp2_var_idx == j)) for j, scale in enumerate(scales)])
+
     vp1_d_idx = np.argmin(vp1_d, axis=-1)
     vp2_d_idx = np.argmin(vp2_d, axis=-1)
     
@@ -72,6 +75,9 @@ def eval():
     print("Median vp2 abs distance: {}".format(np.nanmedian(vp2_d[:, vp2_d_idx])))
     print("Median vp1 rel distance: {}".format(np.nanmedian(vp1_d[:, vp1_d_idx] / vp1_gt_norm)))
     print("Median vp2 rel distance: {}".format(np.nanmedian(vp2_d[:, vp2_d_idx] / vp2_gt_norm)))
+
+    print("Hist for vp1 optimal selection: ", ['scale {} : {}, '.format(scale, np.sum(vp1_d_idx == j)) for j, scale in enumerate(scales)])
+    print("Hist for vp2 optimal selection: ", ['scale {} : {}, '.format(scale, np.sum(vp2_d_idx == j)) for j, scale in enumerate(scales)])
 
 
 if __name__ == '__main__':
