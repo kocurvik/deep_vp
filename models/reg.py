@@ -88,7 +88,24 @@ def load_model(args):
     snapshot_dir_path = os.path.join('snapshots', snapshot_dir_name)
 
     if args.resume:
-        resume_model_path = os.path.join(snapshot_dir_path, 'model.{:03d}.h5'.format(args.resume))
+        if args.experiment_resume is None:
+            args.experiment_resume = args.experiment
+
+        if not args.resnet:
+            model_name = 'reg_diamond' if args.diamond else 'reg_orig'
+            resume_snapshot_dir_name = 'VP1VP2_{}_{}_{}_{}in_{}out_{}s_{}f_{}n_{}b_{}c_{}'. \
+                format(model_name, loss_str, module_str, args.input_size, args.heatmap_size, args.scale, args.features,
+                       args.num_stacks, args.batch_size, args.channels, args.experiment_resume)
+        else:
+            if args.num_stacks != 1:
+                raise Exception("Cannot use ResNet with multiple outputs!")
+            model_name = 'resnet_diamond' if args.diamond else 'resnet_orig'
+            resume_snapshot_dir_name = 'VP1VP2_{}_{}_{}in_{}s_{}b_{}'. \
+                format(model_name, loss_str, args.input_size, args.scale, args.batch_size, args.experiment_resume)
+
+        resume_snapshot_dir_path = os.path.join('snapshots', resume_snapshot_dir_name)
+
+        resume_model_path = os.path.join(resume_snapshot_dir_path, 'model.{:03d}.h5'.format(args.resume))
         print("Loading model", resume_model_path)
         model.load_weights(resume_model_path)
 
@@ -203,6 +220,7 @@ def parse_command_line():
     parser.add_argument('--shutdown', action='store_true', default=False, help='shutdown the machine when done')
     parser.add_argument('-c', '--channels', type=int, default=256, help='number of channels in network')
     parser.add_argument('-exp', '--experiment', type=int, default=0, help='experiment number')
+    parser.add_argument('-expr', '--experiment-resume', type=int, default=None, help='experiment number to resume from')
     parser.add_argument('-w', '--workers', type=int, default=1, help='number of workers for the fit function')
     # parser.add_argument('-s', '--steps', type=int, default=10000, help='steps per epoch')
     parser.add_argument('path')
