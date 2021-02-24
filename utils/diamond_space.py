@@ -78,3 +78,25 @@ def process_heatmap_old(heatmap, scale):
     mean_dist = np.mean(dists) / np.linalg.norm(vp_max)
 
     return vp_max, mean_dist
+
+def process_heatmaps(heatmaps, scales):
+
+    vps = np.empty([heatmaps.shape[0], len(scales), 4])
+    dists = np.empty([heatmaps.shape[0], len(scales), 2])
+
+
+    for i in range(heatmaps.shape[0]):
+        for j, scale in enumerate(scales):
+            heatmap_vp1 = heatmaps[i, :, :, j]
+            heatmap_vp2 = heatmaps[i, :, :, j + 4]
+
+            vp1, vp1_dist = process_heatmap_old(heatmap_vp1, scale)
+            vp2, vp2_dist = process_heatmap_old(heatmap_vp2, scale)
+
+            vps[i, j, :2] = vp1
+            vps[i, j, 2:] = vp2
+
+            dists[i, j, 0] = vp1_dist
+            dists[i, j, 1] = vp2_dist
+
+    return vps, dists
