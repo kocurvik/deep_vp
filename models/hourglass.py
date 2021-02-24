@@ -278,6 +278,7 @@ def parse_command_line():
     parser.add_argument('-r', '--resume', type=int, default=0, help='resume from file')
     parser.add_argument('-lr', '--lr', type=float, default=0.001, help='resume from file')
     parser.add_argument('-b', '--batch_size', type=int, default=4, help='batch size')
+    parser.add_argument('-bb', '--batch_size_eval', type=int, default=4, help='batch size for evaluation script')
     parser.add_argument('-n', '--num_stacks', type=int, default=2, help='number of stacks')
     parser.add_argument('-i', '--input_size', type=int, default=128, help='size of input')
     parser.add_argument('-o', '--heatmap_size', type=int, default=64, help='size of output heatmaps')
