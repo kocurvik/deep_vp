@@ -41,7 +41,7 @@ def load_model(args):
     elif args.loss == 'sl1':
         loss = keras.losses.huber
     else:
-        loss, loss_str = get_diamond_loss(args.loss)
+        loss, loss_str = get_loss(args.loss)
 
     if args.mobilenet:
         module = 'mobilenet'
@@ -129,6 +129,32 @@ def vp2_diamond_dist(vp_d_gt, vp_d_pred):
     vp_gt = original_coords_from_diamond_tf(vp_d_gt[:, 2:])
     vp_pred = original_coords_from_diamond_tf(vp_d_pred[:, 2:])
     return tf.math.sqrt((vp_gt[:, 0] - vp_pred[:, 0]) ** 2 + (vp_gt[:, 1] - vp_pred[:, 1]) ** 2)
+
+def get_loss(loss_arg):
+    if loss_arg[0] == 'd':
+        return get_diamond_loss(loss_arg[1:])
+    else:
+        return get_normalized_loss(loss_arg)
+
+def get_normalized_loss(loss_arg):
+    def _loss(vp_d_gt, vp_d_pred):
+        vp1_gt = original_coords_from_diamond_tf(vp_d_gt[:, :2])
+        vp1_pred = original_coords_from_diamond_tf(vp_d_pred[:, :2])
+
+        vp1_d = tf.math.sqrt((vp1_gt[:, 0] - vp1_pred[:, 0]) ** 2 + (vp1_gt[:, 1] - vp1_pred[:, 1]) ** 2)
+        vp1_n = tf.math.sqrt(vp1_pred[:, 0] ** 2 + vp1_pred[:, 1] ** 2)
+        vp1_l = vp1_d / vp1_n
+
+        vp2_gt = original_coords_from_diamond_tf(vp_d_gt[:, 2:])
+        vp2_pred = original_coords_from_diamond_tf(vp_d_pred[:, 2:])
+
+        vp2_d = tf.math.sqrt((vp2_gt[:, 0] - vp2_pred[:, 0]) ** 2 + (vp2_gt[:, 1] - vp2_pred[:, 1]) ** 2)
+        vp2_n = tf.math.sqrt(vp2_pred[:, 0] ** 2 + vp2_pred[:, 1] ** 2)
+        vp2_l = vp2_d / vp2_n
+
+        return vp1_l + vp2_l
+
+    return _loss, 'normalized'
 
 def get_diamond_loss(loss_arg):
 
