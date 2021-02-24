@@ -4,11 +4,14 @@ import numpy as np
 
 from models.hourglass import parse_command_line, load_model
 from utils.diamond_space import process_heatmaps
+from utils.gpu import set_gpus
 from utils.reg_dataset import RegBoxCarsDataset
 
 def eval():
     args = parse_command_line()
     os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
+
+    set_gpus()
 
     scales = [0.03, 0.1, 0.3, 1.0]
 
