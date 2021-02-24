@@ -228,6 +228,8 @@ def load_model(args, scales):
     print("Experiment number: ", args.experiment)
     print("Mobilenet version: ", args.mobilenet)
     print("Heatmap distribution constructed in original coords: ", args.peak_original)
+    print("Using augmentation: ", not args.no_aug)
+
 
     if args.mobilenet:
         module = 'mobilenet'
@@ -237,6 +239,9 @@ def load_model(args, scales):
         module_str = 'b'
 
     peak_str = 'po' if args.peak_original else 'pd'
+
+    if not args.aug:
+        peak_str += '_noaug'
 
     snapshot_dir_name = 'VP1VP2{}_{}_{}in_{}out_{}s_{}n_{}b_{}c_{}'.format(module_str, peak_str, args.input_size, args.heatmap_size,
                                                                         len(scales), args.num_stacks, args.batch_size,
@@ -279,6 +284,7 @@ def parse_command_line():
     parser.add_argument('-e', '--epochs', type=int, default=50, help='max number of epochs')
     parser.add_argument('-g', '--gpu', type=str, default='0', help='which gpu to use')
     parser.add_argument('-m', '--mobilenet', action='store_true', default=False)
+    parser.add_argument('-na', '--no_aug', action='store_true', default=False, help='Do not use augmentation')
     parser.add_argument('-po', '--peak_original', action='store_true', default=False, help='whether to construct the peak in the original space')
     parser.add_argument('--shutdown', action='store_true', default=False, help='shutdown the machine when done')
     parser.add_argument('-c', '--channels', type=int, default=256, help='number of channels in network')
