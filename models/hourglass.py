@@ -240,7 +240,7 @@ def load_model(args, scales):
 
     peak_str = 'po' if args.peak_original else 'pd'
 
-    if not args.aug:
+    if args.no_aug:
         peak_str += '_noaug'
 
     snapshot_dir_name = 'VP1VP2{}_{}_{}in_{}out_{}s_{}n_{}b_{}c_{}'.format(module_str, peak_str, args.input_size, args.heatmap_size,
