@@ -137,7 +137,7 @@ def get_metrics(use_diamond=False, scale=1.0):
         def vp2_dist(vp_gt, vp_pred):
             return tf.divide(tf.math.sqrt((vp_gt[:, 2] - vp_pred[:, 2]) ** 2 + (vp_gt[:, 3] - vp_pred[:, 3]) ** 2), scale)
 
-    return [vp1_dist, vp2_dist]
+    return [vp1_dist, vp2_dist, vp1_norm_dist, vp2_norm_dist]
 
 
 def original_coords_from_diamond_tf(vp):
@@ -157,34 +157,38 @@ def vp2_diamond_dist(vp_d_gt, vp_d_pred):
     vp_pred = original_coords_from_diamond_tf(vp_d_pred[:, 2:])
     return tf.math.sqrt((vp_gt[:, 0] - vp_pred[:, 0]) ** 2 + (vp_gt[:, 1] - vp_pred[:, 1]) ** 2)
 
+
 def get_loss(loss_arg):
     if loss_arg[0] == 'd':
         return get_diamond_loss(loss_arg[1:])
     else:
         return get_normalized_loss(loss_arg)
 
+
+def vp1_norm_dist(vp_gt, vp_pred):
+    vp1_d = tf.math.sqrt((vp_gt[:, 0] - vp_pred[:, 0]) ** 2 + (vp_gt[:, 1] - vp_pred[:, 1]) ** 2)
+    vp1_n = tf.math.sqrt(vp_gt[:, 0] ** 2 + vp_gt[:, 1] ** 2)
+    vp1_l = vp1_d / vp1_n
+    return vp1_l
+
+
+def vp2_norm_dist(vp_gt, vp_pred):
+    vp2_d = tf.math.sqrt((vp_gt[:, 2] - vp_pred[:, 2]) ** 2 + (vp_gt[:, 3] - vp_pred[:, 3]) ** 2)
+    vp2_n = tf.math.sqrt(vp_gt[:, 2] ** 2 + vp_gt[:, 3] ** 2)
+    vp2_l = vp2_d / vp2_n
+    return vp2_l
+
+
 def get_normalized_loss(loss_arg):
-    def _loss(vp_d_gt, vp_d_pred):
-        vp1_gt = original_coords_from_diamond_tf(vp_d_gt[:, :2])
-        vp1_pred = original_coords_from_diamond_tf(vp_d_pred[:, :2])
-
-        vp1_d = tf.math.sqrt((vp1_gt[:, 0] - vp1_pred[:, 0]) ** 2 + (vp1_gt[:, 1] - vp1_pred[:, 1]) ** 2)
-        vp1_n = tf.math.sqrt(vp1_gt[:, 0] ** 2 + vp1_gt[:, 1] ** 2)
-        vp1_l = vp1_d / vp1_n
-
-        vp2_gt = original_coords_from_diamond_tf(vp_d_gt[:, 2:])
-        vp2_pred = original_coords_from_diamond_tf(vp_d_pred[:, 2:])
-
-        vp2_d = tf.math.sqrt((vp2_gt[:, 0] - vp2_pred[:, 0]) ** 2 + (vp2_gt[:, 1] - vp2_pred[:, 1]) ** 2)
-        vp2_n = tf.math.sqrt(vp2_gt[:, 0] ** 2 + vp2_gt[:, 1] ** 2)
-        vp2_l = vp2_d / vp2_n
-
+    def _loss(vp_gt, vp_pred):
+        vp1_l = vp1_norm_dist(vp_gt, vp_pred)
+        vp2_l = vp2_norm_dist(vp_gt, vp_pred)
         return vp1_l + vp2_l
 
     return _loss, 'normalized'
 
-def get_diamond_loss(loss_arg):
 
+def get_diamond_loss(loss_arg):
     scale = float(loss_arg)
     loss_str = 'diamond{}'.format(scale)
 
