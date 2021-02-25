@@ -50,11 +50,21 @@ def load_model(args):
         module = 'bottleneck'
         module_str = 'b'
 
+    if args.crop_delta == 0 and args.perspective_sigma == 0.0:
+        print("Not using augmentation")
+
+        aug_str ='noaug'
+    else:
+        print("Using augmentation")
+        print("Perspectve sigma: {}".format(args.perspective_sigma))
+        print("Crop delta: {}".format(args.crop_delta))
+        aug_str = 'aug_{}ps_{}cd'.format(args.perspective_sigma, args.crop_delta)
+
 
     if not args.resnet:
         model_name = 'reg_diamond' if args.diamond else 'reg_orig'
-        snapshot_dir_name = 'VP1VP2_{}_{}_{}_{}in_{}out_{}s_{}f_{}n_{}b_{}c_{}'.\
-            format(model_name, loss_str, module_str, args.input_size, args.heatmap_size, args.scale, args.features, args.num_stacks, args.batch_size, args.channels, args.experiment)
+        snapshot_dir_name = 'VP1VP2_{}_{}_{}_{}_{}in_{}out_{}s_{}f_{}n_{}b_{}c_{}'.\
+            format(model_name, loss_str, aug_str, module_str, args.input_size, args.heatmap_size, args.scale, args.features, args.num_stacks, args.batch_size, args.channels, args.experiment)
 
         backbone = create_hourglass_network(args.features, args.num_stacks, inres=args.input_size, outres=args.heatmap_size,
                                          bottleneck=module, num_channels=args.channels)
@@ -74,8 +84,8 @@ def load_model(args):
         if args.num_stacks != 1:
             raise Exception("Cannot use ResNet with multiple outputs!")
         model_name = 'resnet_diamond' if args.diamond else 'resnet_orig'
-        snapshot_dir_name = 'VP1VP2_{}_{}_{}in_{}s_{}b_{}'.\
-            format(model_name, loss_str, args.input_size,  args.scale, args.batch_size, args.experiment)
+        snapshot_dir_name = 'VP1VP2_{}_{}_{}_{}in_{}s_{}b_{}'.\
+            format(model_name, loss_str, aug_str, args.input_size,  args.scale, args.batch_size, args.experiment)
 
         model = keras.models.Sequential()
         backbone = ResNet50(input_shape=(args.input_size, args.input_size, 3), include_top=False, pooling='avg')
@@ -93,15 +103,15 @@ def load_model(args):
 
         if not args.resnet:
             model_name = 'reg_diamond' if args.diamond else 'reg_orig'
-            resume_snapshot_dir_name = 'VP1VP2_{}_{}_{}_{}in_{}out_{}s_{}f_{}n_{}b_{}c_{}'. \
-                format(model_name, loss_str, module_str, args.input_size, args.heatmap_size, args.scale, args.features,
+            resume_snapshot_dir_name = 'VP1VP2_{}_{}_{}_{}_{}in_{}out_{}s_{}f_{}n_{}b_{}c_{}'. \
+                format(model_name, loss_str, aug_str, module_str, args.input_size, args.heatmap_size, args.scale, args.features,
                        args.num_stacks, args.batch_size, args.channels, args.experiment_resume)
         else:
             if args.num_stacks != 1:
                 raise Exception("Cannot use ResNet with multiple outputs!")
             model_name = 'resnet_diamond' if args.diamond else 'resnet_orig'
-            resume_snapshot_dir_name = 'VP1VP2_{}_{}_{}in_{}s_{}b_{}'. \
-                format(model_name, loss_str, args.input_size, args.scale, args.batch_size, args.experiment_resume)
+            resume_snapshot_dir_name = 'VP1VP2_{}_{}_{}_{}in_{}s_{}b_{}'. \
+                format(model_name, loss_str, aug_str, args.input_size, args.scale, args.batch_size, args.experiment_resume)
 
         resume_snapshot_dir_path = os.path.join('snapshots', resume_snapshot_dir_name)
 
@@ -213,6 +223,8 @@ def parse_command_line():
     parser.add_argument('-d', '--diamond', action='store_true', default=False, help='whether to use diamond space for output')
     parser.add_argument('-f', '--features', type=int, default=64, help='number heatmap channels')
     parser.add_argument('-l', '--loss', type=str, default='mse', help='which gpu to use')
+    parser.add_argument('-ps', '--perspective_sigma', type=float, default=25.0, help='perspective sigma for augmentation')
+    parser.add_argument('-cd', '--crop_delta', type=int, default=10, help='crop delta for augmentation')
     parser.add_argument('-e', '--epochs', type=int, default=50, help='max number of epochs')
     parser.add_argument('-g', '--gpu', type=str, default='0', help='which gpu to use')
     parser.add_argument('-m', '--mobilenet', action='store_true', default=False)

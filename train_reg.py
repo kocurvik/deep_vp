@@ -20,7 +20,7 @@ def train():
     print("Use diamond coords for output: {}".format(args.diamond))
     print("Scale for vp: {}".format(args.scale))
 
-    train_dataset = RegBoxCarsDataset(args.path, 'train', batch_size=args.batch_size, img_size=args.input_size, use_diamond=args.diamond, scale=args.scale)
+    train_dataset = RegBoxCarsDataset(args.path, 'train', batch_size=args.batch_size, img_size=args.input_size, use_diamond=args.diamond, scale=args.scale, crop_delta=args.crop_delta, perspective_sigma=args.perspective_sigma)
     print("Loaded training dataset with {} samples".format(len(train_dataset.instance_list)))
     val_dataset = RegBoxCarsDataset(args.path, 'val', batch_size=args.batch_size, img_size=args.input_size, use_diamond=args.diamond, scale=args.scale)
     print("Loaded val dataset with {} samples".format(len(val_dataset.instance_list)))
