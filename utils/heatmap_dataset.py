@@ -47,7 +47,7 @@ class GenerateHeatmap():
 
 
 class HeatmapBoxCarsDataset(keras.utils.Sequence):
-    def __init__(self, path, split, batch_size=32, img_size=128, heatmap_size=128, scales=(0.1, 0.3, 1.0, 3, 10.0), peak_original=False, aug=True, perspective_sigma=25.0, crop_delta=10):
+    def __init__(self, path, split, batch_size=32, img_size=128, heatmap_size=128, scales=(0.1, 0.3, 1.0, 3, 10.0), peak_original=False, perspective_sigma=25.0, crop_delta=10):
         'Initialization'
         with open(os.path.join(path, 'dataset.pkl'), 'rb') as f:
             self.data = pickle.load(f, encoding="latin-1", fix_imports=True)
@@ -75,9 +75,9 @@ class HeatmapBoxCarsDataset(keras.utils.Sequence):
         else:
             self.generate_heatmaps = GenerateHeatmap(self.heatmap_size, self.scales)
 
-        self.aug = aug
         self.perspective_sigma = perspective_sigma
         self.crop_delta = crop_delta
+        self.aug = perspective_sigma > 0 or crop_delta > 0
 
         self.instance_list = []
 

@@ -228,8 +228,6 @@ def load_model(args, scales):
     print("Experiment number: ", args.experiment)
     print("Mobilenet version: ", args.mobilenet)
     print("Heatmap distribution constructed in original coords: ", args.peak_original)
-    print("Using augmentation: ", not args.no_aug)
-
 
     if args.mobilenet:
         module = 'mobilenet'
@@ -240,10 +238,18 @@ def load_model(args, scales):
 
     peak_str = 'po' if args.peak_original else 'pd'
 
-    if args.no_aug:
-        peak_str += '_noaug'
+    if args.crop_delta == 0 and args.perspective_sigma == 0.0:
+        print("Not using augmentation")
 
-    snapshot_dir_name = 'VP1VP2{}_{}_{}in_{}out_{}s_{}n_{}b_{}c_{}'.format(module_str, peak_str, args.input_size, args.heatmap_size,
+        aug_str ='noaug'
+    else:
+        print("Using augmentation")
+        print("Perspectve sigma: {}".format(args.perspective_sigma))
+        print("Crop delta: {}".format(args.crop_delta))
+        aug_str = 'aug_{}ps_{}cd'.format(args.perspective_sigma, args.crop_delta)
+
+
+    snapshot_dir_name = 'VP1VP2{}_{}_{}_{}in_{}out_{}s_{}n_{}b_{}c_{}'.format(module_str, peak_str, aug_str, args.input_size, args.heatmap_size,
                                                                         len(scales), args.num_stacks, args.batch_size,
                                                                         args.channels, args.experiment)
     snapshot_dir_path = os.path.join('snapshots', snapshot_dir_name)
@@ -260,7 +266,7 @@ def load_model(args, scales):
         if args.experiment_resume is None:
             args.experiment_resume = args.experiment
 
-        resume_dir_name = 'VP1VP2{}_{}_{}in_{}out_{}s_{}n_{}b_{}c_{}'.format(module_str, peak_str, args.input_size,
+        resume_dir_name = 'VP1VP2{}_{}_{}_{}in_{}out_{}s_{}n_{}b_{}c_{}'.format(module_str, peak_str, aug_str, args.input_size,
                                                                                args.heatmap_size,
                                                                                len(scales), args.num_stacks,
                                                                                args.batch_size,
@@ -285,7 +291,8 @@ def parse_command_line():
     parser.add_argument('-e', '--epochs', type=int, default=50, help='max number of epochs')
     parser.add_argument('-g', '--gpu', type=str, default='0', help='which gpu to use')
     parser.add_argument('-m', '--mobilenet', action='store_true', default=False)
-    parser.add_argument('-na', '--no_aug', action='store_true', default=False, help='Do not use augmentation')
+    parser.add_argument('-ps', '--perspective_sigma', type=float, default=25.0, help='perspective sigma for augmentation')
+    parser.add_argument('-cd', '--crop_delta', type=int, default=10, help='crop delta for augmentation')
     parser.add_argument('-po', '--peak_original', action='store_true', default=False, help='whether to construct the peak in the original space')
     parser.add_argument('--shutdown', action='store_true', default=False, help='shutdown the machine when done')
     parser.add_argument('-c', '--channels', type=int, default=256, help='number of channels in network')
