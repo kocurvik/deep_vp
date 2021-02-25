@@ -159,14 +159,14 @@ def get_normalized_loss(loss_arg):
         vp1_pred = original_coords_from_diamond_tf(vp_d_pred[:, :2])
 
         vp1_d = tf.math.sqrt((vp1_gt[:, 0] - vp1_pred[:, 0]) ** 2 + (vp1_gt[:, 1] - vp1_pred[:, 1]) ** 2)
-        vp1_n = tf.math.sqrt(vp1_pred[:, 0] ** 2 + vp1_pred[:, 1] ** 2)
+        vp1_n = tf.math.sqrt(vp1_gt[:, 0] ** 2 + vp1_gt[:, 1] ** 2)
         vp1_l = vp1_d / vp1_n
 
         vp2_gt = original_coords_from_diamond_tf(vp_d_gt[:, 2:])
         vp2_pred = original_coords_from_diamond_tf(vp_d_pred[:, 2:])
 
         vp2_d = tf.math.sqrt((vp2_gt[:, 0] - vp2_pred[:, 0]) ** 2 + (vp2_gt[:, 1] - vp2_pred[:, 1]) ** 2)
-        vp2_n = tf.math.sqrt(vp2_pred[:, 0] ** 2 + vp2_pred[:, 1] ** 2)
+        vp2_n = tf.math.sqrt(vp2_gt[:, 0] ** 2 + vp2_gt[:, 1] ** 2)
         vp2_l = vp2_d / vp2_n
 
         return vp1_l + vp2_l
