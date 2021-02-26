@@ -4,10 +4,23 @@ import argparse
 import json
 import time
 
+import tensorflow as tf
 import tensorflow_hub as hub
 import cv2
 import numpy as np
 
+def set_gpus():
+    gpus = tf.config.experimental.list_physical_devices('GPU')
+    if gpus:
+        try:
+            for gpu in gpus:
+                tf.config.experimental.set_memory_growth(gpu, True)
+            logical_gpus = tf.config.experimental.list_logical_devices('GPU')
+
+
+            print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPUs")
+        except RuntimeError as e:
+            print(e)
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -103,6 +116,7 @@ def detect_session(detector, path, session, max_frames=0, skip=10, conf=0.1, dum
 
 def detect():
     args = parse_args()
+    set_gpus()
 
     object_detector = hub.load('https://tfhub.dev/tensorflow/centernet/resnet50v1_fpn_512x512/1')
     # object_detector = hub.load("https://tfhub.dev/tensorflow/centernet/hourglass_512x512/1")

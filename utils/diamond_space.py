@@ -96,7 +96,13 @@ def process_heatmaps(heatmaps, scales):
             vps[i, j, :2] = vp1
             vps[i, j, 2:] = vp2
 
-            dists[i, j, 0] = vp1_dist
-            dists[i, j, 1] = vp2_dist
+            if np.isnan(vp1).any() or np.isinf(vp1).any():
+                dists[i, j, 0] = np.inf
+            else:
+                dists[i, j, 0] = vp1_dist
+            if np.isnan(vp2).any() or np.isinf(vp2).any():
+                dists[i, j, 1] = np.inf
+            else:
+                dists[i, j, 1] = vp2_dist
 
     return vps, dists
