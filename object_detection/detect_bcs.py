@@ -1,3 +1,9 @@
+import sys
+
+from utils.gpu import set_gpus
+
+sys.path.append('..')
+
 import datetime
 import os
 import argparse
@@ -8,19 +14,6 @@ import tensorflow as tf
 import tensorflow_hub as hub
 import cv2
 import numpy as np
-
-def set_gpus():
-    gpus = tf.config.experimental.list_physical_devices('GPU')
-    if gpus:
-        try:
-            for gpu in gpus:
-                tf.config.experimental.set_memory_growth(gpu, True)
-            logical_gpus = tf.config.experimental.list_logical_devices('GPU')
-
-
-            print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPUs")
-        except RuntimeError as e:
-            print(e)
 
 def parse_args():
     parser = argparse.ArgumentParser()
