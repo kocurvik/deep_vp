@@ -2,7 +2,7 @@ import sys
 
 from utils.gpu import set_gpus
 
-sys.path.append('..')
+sys.path.append('.')
 
 import datetime
 import os

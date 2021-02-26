@@ -3,7 +3,7 @@ import sys
 
 from models.reg import parse_command_line, load_model
 
-sys.path.append('..')
+sys.path.append('.')
 
 import datetime
 import argparse
