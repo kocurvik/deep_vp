@@ -8,11 +8,9 @@ from tensorflow import keras
 
 import tensorflow_hub as hub
 
-from keras_retinanet.models import load_model as load_od_model
 
-from models.hourglass import create_hourglass_network, heatmap_mean_accuracy, load_model, parse_command_line
-from utils.heatmap_dataset import HeatmapBoxCarsDataset
-from utils.diamond_space import heatmap_to_vp, process_heatmap, process_heatmap_old, get_focal, process_heatmaps
+from models.reg import load_model, parse_command_line
+from utils.diamond_space import get_focal
 from utils.video import get_cap
 
 
@@ -22,7 +20,7 @@ def preview():
 
     scales = [0.03, 0.1, 0.3, 1.0]
 
-    heatmap_model, _, _ = load_model(args, scales)
+    reg_model, _, _, _ = load_model(args)
 
     print("Heatmap model loaded!")
 
@@ -32,10 +30,10 @@ def preview():
     print("Object detection model loaded!")
 
 
-    # cap = cv2.VideoCapture('D:/Skola/PhD/data/2016-ITS-BrnoCompSpeed/dataset/session6_left/video.avi')
+    cap = cv2.VideoCapture('D:/Skola/PhD/data/2016-ITS-BrnoCompSpeed/dataset/session6_left/video.avi')
     # cap = cv2.VideoCapture('D:/Skola/PhD/data/BrnoCarPark/videos/video.mp4')
-    cap = get_cap('D:/Skola/PhD/data/BrnoCarPark/frames/S01/000')
-    # mask = cv2.imread('D:/Skola/PhD/data/2016-ITS-BrnoCompSpeed/dataset/session6_left/video_mask.png', 0)
+    # cap = get_cap('D:/Skola/PhD/data/BrnoCarPark/frames/S01/000')
+    mask = cv2.imread('D:/Skola/PhD/data/2016-ITS-BrnoCompSpeed/dataset/session6_left/video_mask.png', 0)
 
     pp = np.array([960.5, 540.5])
 
@@ -53,20 +51,20 @@ def preview():
 
     ret = True
     while ret:
-        # for _ in range(10):
-        #     ret, frame = cap.read()
-        # frame = cv2.bitwise_and(frame, frame, mask=mask)
+        for _ in range(10):
+            ret, frame = cap.read()
+        frame = cv2.bitwise_and(frame, frame, mask=mask)
 
-        ret, frame = cap.read()
+        # ret, frame = cap.read()
 
         # frame_od = cv2.resize(frame, (512, 512))
         frame_od = frame
-        cv2.imshow("pre-mask frame_od", frame_od)
-
-        frame_od_mask = back_sub.apply(frame_od)
-        frame_od_mask = cv2.morphologyEx(frame_od_mask, cv2.MORPH_OPEN, kernel_1)
-        frame_od_mask = cv2.morphologyEx(frame_od_mask, cv2.MORPH_DILATE, kernel_2)
-        frame_od = cv2.bitwise_and(frame_od, frame_od, mask=frame_od_mask)
+        # cv2.imshow("pre-mask frame_od", frame_od)
+        #
+        # frame_od_mask = back_sub.apply(frame_od)
+        # frame_od_mask = cv2.morphologyEx(frame_od_mask, cv2.MORPH_OPEN, kernel_1)
+        # frame_od_mask = cv2.morphologyEx(frame_od_mask, cv2.MORPH_DILATE, kernel_2)
+        # frame_od = cv2.bitwise_and(frame_od, frame_od, mask=frame_od_mask)
 
         result = object_detecor(frame_od[np.newaxis, :, :, ::-1])
         boxes, labels, scores = result["detection_boxes"].numpy()[0], result["detection_classes"].numpy()[0], result["detection_scores"].numpy()[0]
@@ -89,17 +87,10 @@ def preview():
 
             cv2.imshow("car", car)
 
-            heatmap_pred = heatmap_model.predict(car[np.newaxis, ...]/255)
+            reg_pred = reg_model.predict(car[np.newaxis, ...]/255)
 
-            pred_vps, pred_vars = process_heatmaps(heatmap_pred[-1], scales)
-
-            vp1_var = pred_vars[0, :, 0]
-            vp2_var = pred_vars[0, :, 1]
-            vp1_var_idx = np.argmin(vp1_var, axis=-1)
-            vp2_var_idx = np.argmin(vp2_var, axis=-1)
-
-            vp1_box = pred_vps[0, vp1_var_idx, :2]
-            vp2_box = pred_vps[0, vp2_var_idx, 2:]
+            vp1_box = reg_pred[0, :2]
+            vp2_box = reg_pred[0, 2:]
 
             vp1 = box_scale * vp1_box + box_center
             vp2 = box_scale * vp2_box + box_center
