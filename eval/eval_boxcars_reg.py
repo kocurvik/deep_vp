@@ -1,7 +1,5 @@
 import os
 import sys
-sys.path.append('.')
-
 
 import numpy as np
 from models.reg import parse_command_line, load_model
