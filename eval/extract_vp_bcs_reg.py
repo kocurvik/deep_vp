@@ -56,9 +56,14 @@ class BatchVPDetector():
 
         box_center = np.array([x_min + x_max, y_min + y_max]) / 2
         box_scale = np.array([x_max - x_min, y_max - y_min]) / 2
-
-        car_img = frame[y_min:y_max, x_min:x_max, :]
-        car_img = cv2.resize(car_img, (self.input_size, self.input_size), cv2.INTER_CUBIC)
+        try:
+            car_img = frame[y_min:y_max, x_min:x_max, :]
+            car_img = cv2.resize(car_img, (self.input_size, self.input_size), cv2.INTER_CUBIC)
+        except Exception as e:
+            print("Caught exception:")
+            print(str(e))
+            print("Ignoring box")
+            return
 
         vp_box = [y_min, x_min, y_max, x_max]
 
