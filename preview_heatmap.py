@@ -1,18 +1,12 @@
-import argparse
 import os
 
 import cv2
 import numpy as np
 
-from tensorflow import keras
-
 import tensorflow_hub as hub
 
-from keras_retinanet.models import load_model as load_od_model
-
-from models.hourglass import create_hourglass_network, heatmap_mean_accuracy, load_model, parse_command_line
-from utils.heatmap_dataset import HeatmapBoxCarsDataset
-from utils.diamond_space import heatmap_to_vp, process_heatmap, process_heatmap_old, get_focal, process_heatmaps
+from models.hourglass import load_model, parse_command_line
+from utils.diamond_space import get_focal, process_heatmaps
 from utils.video import get_cap
 
 

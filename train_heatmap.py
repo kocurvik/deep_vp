@@ -3,7 +3,7 @@ import os
 from tensorflow import keras
 
 from models.hourglass import heatmap_mean_accuracy, load_model, parse_command_line
-from utils.heatmap_dataset import HeatmapBoxCarsDataset
+from datasets.heatmap_dataset import HeatmapBoxCarsDataset
 from utils.gpu import set_gpus
 
 

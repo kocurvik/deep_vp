@@ -1,4 +1,5 @@
 import json
+import os
 
 import cv2
 import numpy as np
@@ -37,3 +38,18 @@ def show_mask_debug(frame, boxes, masks):
         cv2.imshow("Masks transformed", mask_frame)
         cv2.imshow("Masks original", mask)
         cv2.waitKey(0)
+
+
+def get_bcp_session_filenames(path, session):
+    session_dir = os.path.join(path, 'frames', session)
+    print("Checking session dir ", session_dir)
+
+    all_filenames = []
+
+    for dir in sorted(os.listdir(session_dir)):
+        dir_path = os.path.join(session_dir, dir)
+        print("Checking dir ", dir_path)
+        dir_filenames = [os.path.join(dir_path, filename) for filename in sorted(os.listdir(dir_path))]
+        all_filenames.extend(dir_filenames)
+
+    return all_filenames

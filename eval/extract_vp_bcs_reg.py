@@ -157,8 +157,6 @@ def detect_session(detector, model_dir_name, data_path, session, args):
         if frame_cnt != frame_cnt_orig:
             raise Exception("Frames from OD do not match frames now! Wrong skip param?")
 
-
-
         boxes = detection['boxes']
         scores = detection['scores']
 
@@ -189,7 +187,7 @@ def detect():
     model, _, model_dir_name, _ = load_model(args)
 
     data_path = args.path
-    sessions = os.listdir(os.path.join(data_path, 'dataset'))
+    sessions = sorted(os.listdir(os.path.join(data_path, 'dataset')))
     for session in sessions:
         detect_session(model, model_dir_name, data_path, session, args)
 

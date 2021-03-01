@@ -1,4 +1,4 @@
-from object_detection.detect_utils import save, show_debug, show_mask_debug
+from object_detection.detect_utils import save, show_debug, show_mask_debug, get_bcp_session_filenames
 from utils.gpu import set_gpus
 
 import datetime
@@ -20,21 +20,6 @@ def parse_args():
 
     args = parser.parse_args()
     return args
-
-
-def get_session_filenames(path, session):
-    session_dir = os.path.join(path, 'frames', session)
-    print("Checking session dir ", session_dir)
-
-    all_filenames = []
-
-    for dir in sorted(os.listdir(session_dir)):
-        dir_path = os.path.join(session_dir, dir)
-        print("Checking dir ", dir_path)
-        dir_filenames = [os.path.join(dir_path, filename) for filename in sorted(os.listdir(dir_path))]
-        all_filenames.extend(dir_filenames)
-
-    return all_filenames
 
 
 def filter_boxes_scores(boxes, scores, labels, running_mean_frame, frame, conf=0.1):
@@ -80,14 +65,13 @@ def detect_session(detector, path, session, conf=0.1, dump_every=0, mask=False, 
 
     print("Writing to ", json_path)
 
-    filenames = get_session_filenames(path, session)
+    filenames = get_bcp_session_filenames(path, session)
 
 
     detection_list = []
     start_time = time.time()
 
     frame_cnt = 0
-    running_mean_frame = np.zeros([1080, 1920, 3])
 
     for filename in filenames:
         frame = cv2.imread(filename)
@@ -141,14 +125,12 @@ def detect():
         object_detector = hub.load("https://hub.tensorflow.google.cn/tensorflow/mask_rcnn/inception_resnet_v2_1024x1024/1")
     else:
         object_detector = hub.load('https://tfhub.dev/tensorflow/centernet/resnet50v1_fpn_512x512/1')
-    # object_detector = hub.load("https://tfhub.dev/tensorflow/centernet/hourglass_512x512/1")
-
-    # object_detector = load_model('snapshots/od/resnet50_coco_best_v2.1.0.h5', backbone_name='resnet50')
 
     path = args.path
     sessions = sorted(os.listdir(os.path.join(path, 'frames')))
     for session in sessions:
         detect_session(object_detector, path, session, conf=args.conf, dump_every=args.dump_every, mask=args.mask, debug=args.debug)
+
 
 if __name__ == '__main__':
     detect()

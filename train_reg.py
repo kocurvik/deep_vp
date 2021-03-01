@@ -1,10 +1,9 @@
 import os
 
-from models.reg import load_model, parse_command_line, vp1_diamond_dist, vp2_diamond_dist, \
-    get_metrics
+from models.reg import load_model, parse_command_line, get_metrics
 from tensorflow import keras
 from utils.gpu import set_gpus
-from utils.reg_dataset import RegBoxCarsDataset
+from datasets.reg_dataset import RegBoxCarsDataset
 
 
 def train():
