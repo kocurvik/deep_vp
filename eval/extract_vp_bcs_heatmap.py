@@ -13,23 +13,10 @@ import tensorflow as tf
 import tensorflow_hub as hub
 import cv2
 import numpy as np
+from object_detection.detect_utils import show_debug
 from utils.diamond_space import process_heatmaps
 
 from utils.gpu import set_gpus
-
-
-def show_debug(frame, boxes):
-    for box in boxes:
-        x_min = int(1920 * box[1])
-        y_min = int(1080 * box[0])
-        x_max = int(1920 * box[3] + 1)
-        y_max = int(1080 * box[2] + 1)
-
-        frame=cv2.rectangle(frame, (x_min, y_min), (x_max, y_max), (0, 0, 255))
-
-    cv2.imshow("Detections", frame)
-    cv2.waitKey(1)
-
 
 class BatchVPDetector():
     def __init__(self, model, args):

@@ -22,40 +22,6 @@ def parse_args():
     return args
 
 
-def filter_boxes_scores(boxes, scores, labels, running_mean_frame, frame, conf=0.1):
-    filtered_boxes = []
-    filtered_scores = []
-
-    diff = np.linalg.norm(frame - running_mean_frame, axis=-1)
-
-    for box, score in zip(boxes, scores):
-        x_min = int(1920 * box[1])
-        y_min = int(1080 * box[0])
-        x_max = int(1920 * box[3] + 1)
-        y_max = int(1080 * box[2] + 1)
-
-        diff_box = diff[y_min: y_max, x_min: x_max]
-        mean_diff = np.mean(diff_box)
-        if mean_diff > 0.1:
-            filtered_boxes.append(box.tolist())
-            filtered_scores.append(score)
-
-        # print("Mean diff ", mean_diff)
-        #
-        # box_prev_frame = running_mean_frame[y_min: y_max, x_min: x_max, :]
-        # box_frame = frame[y_min: y_max, x_min: x_max, :]
-        # cv2.imshow("box running mean", box_prev_frame)
-        # cv2.imshow("box", box_frame)
-        # cv2.imshow("diff", diff)
-        #
-        # frame_vis = cv2.rectangle(np.copy(frame), (x_min, y_min), (x_max, y_max), (0, 0, 255))
-        # cv2.imshow("Frmae", frame_vis)
-        # cv2.waitKey(1)
-
-    return filtered_boxes, filtered_scores
-
-
-
 def detect_session(detector, path, session, conf=0.1, dump_every=0, mask=False, debug=False):
     print("Starting object detection for ", session)
     if mask:
