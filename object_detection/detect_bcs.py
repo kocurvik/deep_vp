@@ -28,13 +28,16 @@ def parse_args():
     return args
 
 
-def detect_session(detector, path, session, max_frames=0, skip=10, conf=0.1, dump_every=0, debug=False):
+def detect_session(detector, path, session, max_frames=0, skip=10, conf=0.1, dump_every=0, mask=False, debug=False):
     print("Starting object detection for ", session)
 
     cap = cv2.VideoCapture(os.path.join(path, 'dataset', session, 'video.avi'))
     mask = cv2.imread(os.path.join(path, 'dataset', session, 'video_mask.png'), 0)
 
-    json_path = os.path.join(path, 'dataset', session, 'detections.json')
+    if mask:
+        json_path = os.path.join(path, 'dataset', session, 'detections_mask.json')
+    else:
+        json_path = os.path.join(path, 'dataset', session, 'detections.json')
 
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     print("Video has {} frames".format(total_frames))
