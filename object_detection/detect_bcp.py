@@ -44,11 +44,6 @@ def show_debug(frame, boxes):
 
 def show_mask_debug(frame, boxes, masks):
     for box, mask in zip(boxes, masks):
-        # x_min = int(1920 * box[1])
-        # y_min = int(1080 * box[0])
-        # x_max = min(int(1920 * box[3] + 1), 1920)
-        # y_max = min(int(1080 * box[2] + 1), 1080)
-
         rect_src = np.array([[0, 0], [mask.shape[1], 0], [mask.shape[1], mask.shape[0]], [0, mask.shape[0]]], dtype=np.float32)
         rect_dst = np.array([[1920 * box[1], 1080 * box[0]], [1920 * box[3], 1080 * box[0]], [1920 * box[3], 1080 * box[2]], [1920 * box[1], 1080 * box[2]]], dtype=np.float32)
 
@@ -188,7 +183,7 @@ def detect():
     # object_detector = load_model('snapshots/od/resnet50_coco_best_v2.1.0.h5', backbone_name='resnet50')
 
     path = args.path
-    sessions = os.listdir(os.path.join(path, 'frames'))
+    sessions = sorted(os.listdir(os.path.join(path, 'frames')))
     for session in sessions:
         detect_session(object_detector, path, session, conf=args.conf, dump_every=args.dump_every, mask=args.mask, debug=args.debug)
 
