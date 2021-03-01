@@ -32,7 +32,7 @@ def detect_session(detector, path, session, max_frames=0, skip=10, conf=0.1, dum
     print("Starting object detection for ", session)
 
     cap = cv2.VideoCapture(os.path.join(path, 'dataset', session, 'video.avi'))
-    mask = cv2.imread(os.path.join(path, 'dataset', session, 'video_mask.png'), 0)
+    video_mask = cv2.imread(os.path.join(path, 'dataset', session, 'video_mask.png'), 0)
 
     if mask:
         json_path = os.path.join(path, 'dataset', session, 'detections_mask.json')
@@ -66,7 +66,7 @@ def detect_session(detector, path, session, max_frames=0, skip=10, conf=0.1, dum
         if frame_cnt > max_frames:
             break
 
-        frame = cv2.bitwise_and(frame, frame, mask=mask)
+        frame = cv2.bitwise_and(frame, frame, mask=video_mask)
 
         result = detector(frame[np.newaxis, :, :, ::-1])
         boxes, labels, scores = result["detection_boxes"].numpy()[0], result["detection_classes"].numpy()[0], \
