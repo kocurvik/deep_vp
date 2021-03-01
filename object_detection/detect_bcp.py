@@ -33,8 +33,6 @@ def detect_session(detector, path, session, conf=0.1, dump_every=0, mask=False, 
 
     filenames = get_bcp_session_filenames(path, session)
 
-    print(filenames[:100])
-
     detection_list = []
     start_time = time.time()
 
