@@ -1,6 +1,7 @@
 import os
 import sys
 
+from eval.extract_vp_utils import save
 from models.reg import parse_command_line, load_model
 
 import datetime
@@ -14,10 +15,6 @@ import cv2
 import numpy as np
 
 from utils.gpu import set_gpus
-
-def save(json_path, detection_list):
-    with open(json_path, 'w') as f:
-        json.dump(detection_list, f)
 
 
 def show_debug(frame, boxes):

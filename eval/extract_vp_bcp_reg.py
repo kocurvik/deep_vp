@@ -1,6 +1,6 @@
 import os
 
-from eval.extract_vp_batch_detector import BatchVPDetector
+from eval.extract_vp_utils import BatchVPDetector, save
 from models.reg import parse_command_line, load_model
 
 import datetime
@@ -8,47 +8,14 @@ import json
 import time
 
 import cv2
-import numpy as np
 
 from utils.gpu import set_gpus
-
-def save(json_path, detection_list):
-    with open(json_path, 'w') as f:
-        json.dump(detection_list, f)
-
-
-def show_debug(frame, boxes):
-    for box in boxes:
-        x_min = int(1920 * box[1])
-        y_min = int(1080 * box[0])
-        x_max = int(1920 * box[3] + 1)
-        y_max = int(1080 * box[2] + 1)
-
-        frame=cv2.rectangle(frame, (x_min, y_min), (x_max, y_max), (0, 0, 255))
-
-    cv2.imshow("Detections", frame)
-    cv2.waitKey(1)
-
-
-def get_session_filenames(path, session):
-    session_dir = os.path.join(path, 'frames', session)
-    print("Checking session dir ", session_dir)
-
-    filenames = []
-
-    for dir in os.listdir(session_dir):
-        dir_path = os.path.join(session_dir, dir)
-        print("Checking dir ", dir_path)
-        filenames.extend([os.path.join(dir_path, filename) for filename in os.listdir(dir_path)])
-
-    return filenames
 
 
 def detect_session(detector, model_dir_name, data_path, session, args):
     batch_vp_detector = BatchVPDetector(detector, args)
 
     print("Starting vp detection for ", session)
-    filenames = get_session_filenames(data_path, session)
 
     json_path = os.path.join(data_path, 'data', session, 'detections.json')
     with open(json_path, 'r') as f:
@@ -63,16 +30,16 @@ def detect_session(detector, model_dir_name, data_path, session, args):
 
     start_time = time.time()
 
-    for detection, frame_filename in zip(detection_data, filenames):
+    for detection in detection_data:
+        frame_filename = detection['filename']
         frame = cv2.imread(os.path.join(data_path, 'frames', frame_filename))
-
         frame_cnt = detection['frame_cnt']
 
         boxes = detection['boxes']
         scores = detection['scores']
 
-        if args.debug:
-            show_debug(np.copy(frame), boxes)
+        # if args.debug:
+        #     show_debug(np.copy(frame), boxes)
 
         for box, score in zip(boxes, scores):
             box_cnt += 1
@@ -83,7 +50,7 @@ def detect_session(detector, model_dir_name, data_path, session, args):
                 save(output_json_path, batch_vp_detector.output_list)
 
         remaining_seconds = (time.time() - start_time) / (box_cnt + 1) * (total_box_count - box_cnt)
-        print('Frame {}, Box: {} / {}, ETA: {}'.format(frame_cnt, box_cnt, total_box_count, datetime.timedelta(seconds=remaining_seconds)))
+        print('{} : {}, Box: {} / {}, ETA: {}'.format(frame_cnt, frame_filename, box_cnt, total_box_count, datetime.timedelta(seconds=remaining_seconds)))
 
     batch_vp_detector.finalize()
     print("Saving at box ", box_cnt)

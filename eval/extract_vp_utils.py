@@ -1,3 +1,5 @@
+import json
+
 import cv2
 import numpy as np
 
@@ -86,3 +88,8 @@ class BatchVPDetector():
 
         cv2.imshow("VPs debug", frame)
         cv2.waitKey(1)
+
+
+def save(json_path, detection_list):
+    with open(json_path, 'w') as f:
+        json.dump(detection_list, f)

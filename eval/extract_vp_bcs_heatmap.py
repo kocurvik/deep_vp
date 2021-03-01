@@ -1,6 +1,7 @@
 import os
 import sys
 
+from eval.extract_vp_utils import save
 from models.hourglass import parse_command_line, load_model
 
 import datetime
@@ -15,10 +16,6 @@ import numpy as np
 from utils.diamond_space import process_heatmaps
 
 from utils.gpu import set_gpus
-
-def save(json_path, detection_list):
-    with open(json_path, 'w') as f:
-        json.dump(detection_list, f)
 
 
 def show_debug(frame, boxes):
@@ -164,8 +161,6 @@ def detect_session(detector, model_dir_name, data_path, session, args):
 
         if frame_cnt != frame_cnt_orig:
             raise Exception("Frames from OD do not match frames now! Wrong skip param?")
-
-
 
         boxes = detection['boxes']
         scores = detection['scores']
