@@ -39,6 +39,8 @@ def detect_session(detector, path, session, max_frames=0, skip=10, conf=0.1, dum
     else:
         json_path = os.path.join(path, 'dataset', session, 'detections.json')
 
+    print("Writing into ", json_path)
+
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     print("Video has {} frames".format(total_frames))
 
