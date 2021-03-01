@@ -120,6 +120,8 @@ def detect_session(detector, path, session, conf=0.1, dump_every=0, mask=False, 
     else:
         json_path = os.path.join(path, 'data', session, 'detections.json')
 
+    print("Writing to ", json_path)
+
     filenames = get_session_filenames(path, session)
 
 
@@ -151,7 +153,7 @@ def detect_session(detector, path, session, conf=0.1, dump_every=0, mask=False, 
 
         remaining_seconds = (time.time() - start_time) / frame_cnt * (len(filenames) - frame_cnt)
 
-        print('Frame: {} / {}, ETA: {}'.format(frame_cnt, len(filenames), datetime.timedelta(seconds=(remaining_seconds))))
+        print('{} : {} / {}, ETA: {}'.format(filename, frame_cnt, len(filenames), datetime.timedelta(seconds=(remaining_seconds))))
 
         item = {'filename':  filename, 'frame_cnt': frame_cnt, 'boxes': boxes.tolist(), 'scores': scores.tolist()}
 
@@ -177,6 +179,7 @@ def detect():
     set_gpus()
 
     if args.mask:
+        print("Running with mask!")
         object_detector = hub.load("https://hub.tensorflow.google.cn/tensorflow/mask_rcnn/inception_resnet_v2_1024x1024/1")
     else:
         object_detector = hub.load('https://tfhub.dev/tensorflow/centernet/resnet50v1_fpn_512x512/1')
