@@ -40,7 +40,7 @@ def detect_session(detector, path, session, conf=0.1, dump_every=0, mask=False, 
     frame_cnt = 0
 
     for filename in filenames:
-        frame = cv2.imread(filename)
+        frame = cv2.imread(os.path.join(path, filename))
         frame_cnt += 1
         if frame is None:
             continue
