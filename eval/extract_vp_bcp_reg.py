@@ -68,7 +68,7 @@ def detect_session(detector, model_dir_name, data_path, session, args):
 
     for detection in detection_data:
         frame_filename = detection['filename']
-        frame = cv2.imread(os.path.join(data_path, 'frames', frame_filename))
+        frame = cv2.imread(os.path.join(data_path, 'frames', session, frame_filename))
         frame_cnt = detection['frame_cnt']
 
         boxes = detection['boxes']
