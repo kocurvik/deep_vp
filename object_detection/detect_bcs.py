@@ -1,5 +1,6 @@
 import sys
 
+from object_detection.detect_utils import show_debug, save, show_mask_debug
 from utils.gpu import set_gpus
 
 import datetime
@@ -15,6 +16,7 @@ import numpy as np
 
 def parse_args():
     parser = argparse.ArgumentParser()
+    parser.add_argument('--mask', action='store_true', default=False)
     parser.add_argument('-d', '--dump_every', type=int, default=0)
     parser.add_argument('-s', '--skip', type=int, default=10)
     parser.add_argument('-c', '--conf', type=float, default=0.1)
@@ -24,24 +26,6 @@ def parse_args():
 
     args = parser.parse_args()
     return args
-
-
-def save(json_path, detection_list):
-    with open(json_path, 'w') as f:
-        json.dump(detection_list, f)
-
-
-def show_debug(frame, boxes):
-    for box in boxes:
-        x_min = int(1920 * box[1])
-        y_min = int(1080 * box[0])
-        x_max = int(1920 * box[3] + 1)
-        y_max = int(1080 * box[2] + 1)
-
-        frame=cv2.rectangle(frame, (x_min, y_min), (x_max, y_max), (0, 0, 255))
-
-    cv2.imshow("Detections", frame)
-    cv2.waitKey(1)
 
 
 def detect_session(detector, path, session, max_frames=0, skip=10, conf=0.1, dump_every=0, debug=False):
@@ -94,6 +78,13 @@ def detect_session(detector, path, session, max_frames=0, skip=10, conf=0.1, dum
         print('Frame: {} / {}, ETA: {}'.format(frame_cnt, max_frames, datetime.timedelta(seconds=(remaining_seconds))))
 
         item = {'frame_cnt': frame_cnt, 'boxes': boxes.tolist(), 'scores': scores.tolist()}
+
+        if mask:
+            masks = result["detection_masks"].numpy()[0][l]
+            item['masks'] = masks.tolist()
+            if debug:
+                show_mask_debug(np.copy(frame), boxes, masks)
+
         detection_list.append(item)
 
         if dump_every != 0 and len(detection_list) % dump_every == 0:
@@ -109,15 +100,19 @@ def detect():
     args = parse_args()
     set_gpus()
 
-    object_detector = hub.load('https://tfhub.dev/tensorflow/centernet/resnet50v1_fpn_512x512/1')
+    if args.mask:
+        print("Running with mask!")
+        object_detector = hub.load("https://hub.tensorflow.google.cn/tensorflow/mask_rcnn/inception_resnet_v2_1024x1024/1")
+    else:
+        object_detector = hub.load('https://tfhub.dev/tensorflow/centernet/resnet50v1_fpn_512x512/1')
     # object_detector = hub.load("https://tfhub.dev/tensorflow/centernet/hourglass_512x512/1")
 
     # object_detector = load_model('snapshots/od/resnet50_coco_best_v2.1.0.h5', backbone_name='resnet50')
 
     path = args.path
-    sessions = os.listdir(os.path.join(path, 'dataset'))
+    sessions = sorted(os.listdir(os.path.join(path, 'dataset')))
     for session in sessions:
-        detect_session(object_detector, path, session, max_frames=args.max_frames, skip=args.skip, conf=args.conf, dump_every=args.dump_every, debug=args.debug)
+        detect_session(object_detector, path, session, max_frames=args.max_frames, skip=args.skip, conf=args.conf, dump_every=args.dump_every, mask=args.mask, debug=args.debug)
 
 if __name__ == '__main__':
     detect()
