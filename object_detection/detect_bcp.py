@@ -50,7 +50,7 @@ def show_mask_debug(frame, boxes, masks):
         # y_max = min(int(1080 * box[2] + 1), 1080)
 
         rect_src = np.array([[0, 0], [mask.shape[1], 0], [mask.shape[1], mask.shape[0]], [0, mask.shape[0]]], dtype=np.float32)
-        rect_dst = np.array([[box[1], box[0]], [box[3], box[0]], [box[3], box[2]], [box[1], box[2]]], dtype=np.float32)
+        rect_dst = np.array([[1920 * box[1], 1080 * box[0]], [1920 * box[3], 1080 * box[0]], [1920 * box[3], 1080 * box[2]], [1920 * box[1], 1080 * box[2]]], dtype=np.float32)
 
         M = cv2.getPerspectiveTransform(rect_src[:, :], rect_dst[:, :])
 
@@ -174,7 +174,6 @@ def detect_session(detector, path, session, conf=0.1, dump_every=0, mask=False, 
 
 def detect():
     args = parse_args()
-    os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
     set_gpus()
 
     if args.mask:
