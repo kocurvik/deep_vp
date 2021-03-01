@@ -49,7 +49,7 @@ def get_bcp_session_filenames(path, session):
     for dir in sorted(os.listdir(session_dir)):
         dir_path = os.path.join(session_dir, dir)
         print("Checking dir ", dir_path)
-        dir_filenames = [os.path.join(dir, filename) for filename in sorted(os.listdir(dir_path))]
+        dir_filenames = [os.path.join(session, dir, filename) for filename in sorted(os.listdir(dir_path))]
         all_filenames.extend(dir_filenames)
 
     return all_filenames
