@@ -52,6 +52,8 @@ def detect_session(detector, model_dir_name, data_path, session, args):
     with open(json_path, 'r') as f:
         detection_data = json.load(f)
 
+    detection_data = detection_data[:args.max_frames]
+
     output_json_name = 'VPout_{}_r{}.json'.format(model_dir_name, args.resume)
     output_json_path = os.path.join(data_path, 'data', session, output_json_name)
 
