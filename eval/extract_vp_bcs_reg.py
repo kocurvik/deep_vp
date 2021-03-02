@@ -62,7 +62,7 @@ def detect_session(detector, model_dir_name, data_path, session, args):
 
         for box, score in zip(boxes, scores):
             box_cnt += 1
-            batch_vp_detector.process(frame_cnt, frame, box, score)
+            batch_vp_detector.process(frame, box, score, frame_cnt=frame_cnt)
 
             if args.dump_every != 0 and box_cnt % args.dump_every == 0:
                 print("Saving at box ", box_cnt)

@@ -14,7 +14,7 @@ class BatchVPDetector():
         self.q = []
         self.output_list = []
 
-    def process(self, frame_cnt, frame, box, score):
+    def process(self, frame, box, score, **kwargs):
         if self.debug:
             self.last_frame = frame
 
@@ -36,7 +36,7 @@ class BatchVPDetector():
 
         vp_box = [y_min, x_min, y_max, x_max]
 
-        item = {'car_img': car_img, 'box': box, 'box_center': box_center, 'box_scale': box_scale, 'vp_box': vp_box, 'frame_cnt': frame_cnt, 'score': score}
+        item = {'car_img': car_img, 'box': box, 'box_center': box_center, 'box_scale': box_scale, 'vp_box': vp_box, 'score': score, **kwargs}
         self.q.append(item)
         if len(self.q) == self.batch_size:
             self.predict()

@@ -14,37 +14,34 @@ from object_detection.detect_utils import show_debug
 from utils.gpu import set_gpus
 
 
-def filter_boxes(boxes, scores, frame, running_average_frame):
+def filter_boxes(boxes, scores, frame, prev_edge):
     filtered_boxes = []
     filtered_scores = []
 
-    diff = np.linalg.norm(frame - running_average_frame, axis=-1)
+    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    edge = cv2.Canny(frame, 100, 200)
+    if prev_edge is None:
+        edge_diff = edge
+    else:
+        edge_diff = np.abs(edge - prev_edge)
 
     for box, score in zip(boxes, scores):
-        x_min = int(1920 * box[1])
-        y_min = int(1080 * box[0])
-        x_max = int(1920 * box[3] + 1)
-        y_max = int(1080 * box[2] + 1)
+        x_min = int(frame.shape[1] * box[1])
+        y_min = int(frame.shape[0] * box[0])
+        x_max = int(frame.shape[1] * box[3] + 1)
+        y_max = int(frame.shape[0] * box[2] + 1)
 
-        diff_box = diff[y_min: y_max, x_min: x_max]
-        mean_diff = np.mean(diff_box)
-        if mean_diff > 0.15:
-            filtered_boxes.append(box.tolist())
+        edge_box = edge_diff[y_min: y_max, x_min: x_max]
+        if np.mean(edge_box) > 5.0:
+            filtered_boxes.append(box)
             filtered_scores.append(score)
+            if len(filtered_scores) >= 10:
+                break
 
-        # print("Mean diff ", mean_diff)
-        #
-        # box_prev_frame = running_mean_frame[y_min: y_max, x_min: x_max, :]
-        # box_frame = frame[y_min: y_max, x_min: x_max, :]
-        # cv2.imshow("box running mean", box_prev_frame)
-        # cv2.imshow("box", box_frame)
-        # cv2.imshow("diff", diff)
-        #
-        # frame_vis = cv2.rectangle(np.copy(frame), (x_min, y_min), (x_max, y_max), (0, 0, 255))
-        # cv2.imshow("Frmae", frame_vis)
-        # cv2.waitKey(1)
+    prev_edge = edge
 
-        return filtered_boxes, filtered_scores
+    return filtered_boxes, filtered_scores, prev_edge
+
 
 def detect_session(detector, model_dir_name, data_path, session, args):
     batch_vp_detector = BatchVPDetector(detector, args)
@@ -64,7 +61,8 @@ def detect_session(detector, model_dir_name, data_path, session, args):
 
     start_time = time.time()
 
-    running_average_frame = np.zeros([1080, 1920, 3], dtype=np.float32)
+    # running_average_frame = np.zeros([1080, 1920, 2], dtype=np.float32)
+    prev_edge = None
 
     for detection in detection_data:
         frame_filename = detection['filename']
@@ -74,14 +72,15 @@ def detect_session(detector, model_dir_name, data_path, session, args):
         boxes = detection['boxes']
         scores = detection['scores']
 
-        boxes, scores = filter_boxes(boxes, scores, frame, running_average_frame)
+        box_cnt += len(boxes)
+
+        boxes, scores, prev_edge = filter_boxes(boxes, scores, frame, prev_edge)
 
         if args.debug:
             show_debug(np.copy(frame), boxes)
 
         for box, score in zip(boxes, scores):
-            box_cnt += 1
-            batch_vp_detector.process(frame_cnt, frame, box, score)
+            batch_vp_detector.process(frame, box, score, frame_cnt=frame_cnt, frame_filename=frame_filename)
 
             if args.dump_every != 0 and box_cnt % args.dump_every == 0:
                 print("Saving at box ", box_cnt)
@@ -89,7 +88,6 @@ def detect_session(detector, model_dir_name, data_path, session, args):
 
         remaining_seconds = (time.time() - start_time) / (box_cnt + 1) * (total_box_count - box_cnt)
         print('{} : {}, Box: {} / {}, ETA: {}'.format(frame_cnt, frame_filename, box_cnt, total_box_count, datetime.timedelta(seconds=remaining_seconds)))
-        running_average_frame = 0.8 * running_average_frame + 0.2 * frame
 
     batch_vp_detector.finalize()
     print("Saving at box ", box_cnt)
