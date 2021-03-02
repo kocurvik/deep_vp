@@ -18,10 +18,10 @@ class BatchVPDetector():
         if self.debug:
             self.last_frame = frame
 
-        x_min = int(1920 * box[1])
-        y_min = int(1080 * box[0])
-        x_max = int(1920 * box[3] + 1)
-        y_max = int(1080 * box[2] + 1)
+        x_min = int(frame.shape[1] * box[1])
+        y_min = int(frame.shape[0] * box[0])
+        x_max = int(frame.shape[1] * box[3] + 1)
+        y_max = int(frame.shape[0] * box[2] + 1)
 
         box_center = np.array([x_min + x_max, y_min + y_max]) / 2
         box_scale = np.array([x_max - x_min, y_max - y_min]) / 2
