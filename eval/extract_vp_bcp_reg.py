@@ -102,7 +102,7 @@ def detect():
     model, _, model_dir_name, _ = load_model(args)
 
     data_path = args.path
-    sessions = os.listdir(os.path.join(data_path, 'data'))
+    sessions = sorted(os.listdir(os.path.join(data_path, 'data')))
     for session in sessions:
         detect_session(model, model_dir_name, data_path, session, args)
 
