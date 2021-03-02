@@ -240,6 +240,7 @@ def parse_command_line():
     parser.add_argument('-w', '--workers', type=int, default=1, help='number of workers for the fit function')
     parser.add_argument('--debug', action='store_true', default=False, help='enable debug where applicable')
     parser.add_argument('-de', '--dump_every', type=int, default=0)
+    parser.add_argument('-mf', '--max_frames', type=int, default=5000)
     parser.add_argument('--skip', type=int, default=1)
     # parser.add_argument('-s', '--steps', type=int, default=10000, help='steps per epoch')
     parser.add_argument('path')
