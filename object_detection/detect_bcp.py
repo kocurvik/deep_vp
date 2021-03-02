@@ -12,6 +12,7 @@ import numpy as np
 
 def parse_args():
     parser = argparse.ArgumentParser()
+    parser.add_argument('-m', '--max_frames', type=int, default=5000)
     parser.add_argument('--mask', action='store_true', default=False)
     parser.add_argument('-d', '--dump_every', type=int, default=0)
     parser.add_argument('-c', '--conf', type=float, default=0.1)
@@ -22,7 +23,7 @@ def parse_args():
     return args
 
 
-def detect_session(detector, path, session, conf=0.1, dump_every=0, mask=False, debug=False):
+def detect_session(detector, path, session, conf=0.1, dump_every=0, max_frames=5000, mask=False, debug=False):
     print("Starting object detection for ", session)
     if mask:
         json_path = os.path.join(path, 'data', session, 'detections_mask.json')
@@ -31,7 +32,7 @@ def detect_session(detector, path, session, conf=0.1, dump_every=0, mask=False, 
 
     print("Writing to ", json_path)
 
-    filenames = get_bcp_session_filenames(path, session)
+    filenames = get_bcp_session_filenames(path, session)[:max_frames]
 
     detection_list = []
     start_time = time.time()
@@ -94,7 +95,7 @@ def detect():
     path = args.path
     sessions = sorted(os.listdir(os.path.join(path, 'frames')))
     for session in sessions:
-        detect_session(object_detector, path, session, conf=args.conf, dump_every=args.dump_every, mask=args.mask, debug=args.debug)
+        detect_session(object_detector, path, session, conf=args.conf, dump_every=args.dump_every, max_frames=args.max_frames, mask=args.mask, debug=args.debug)
 
 
 if __name__ == '__main__':
