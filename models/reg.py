@@ -83,12 +83,18 @@ def load_model(args):
     else:
         if args.num_stacks != 1:
             raise Exception("Cannot use ResNet with multiple outputs!")
-        model_name = 'resnet_diamond' if args.diamond else 'resnet_orig'
+        if args.no_stride:
+            model_name = 'resnet_diamond' if args.diamond else 'resnet_orig'
+        else:
+            model_name = 'resnet_ns_diamond' if args.diamond else 'resnet_ns_orig'
+
+
         snapshot_dir_name = 'VP1VP2_{}_{}_{}_{}in_{}s_{}b_{}'.\
             format(model_name, loss_str, aug_str, args.input_size,  args.scale, args.batch_size, args.experiment)
 
         model = keras.models.Sequential()
         backbone = ResNet50(input_shape=(args.input_size, args.input_size, 3), include_top=False, pooling='avg')
+        print(backbone.summary())
         model.add(backbone)
         model.add(keras.layers.Dense(128, activation='relu', name='mlp_1'))
         model.add(keras.layers.Dense(64, activation='relu', name='mlp_2'))
@@ -180,12 +186,17 @@ def vp2_norm_dist(vp_gt, vp_pred):
 
 
 def get_normalized_loss(loss_arg):
+    w = float(loss_arg)
+
     def _loss(vp_gt, vp_pred):
         vp1_l = vp1_norm_dist(vp_gt, vp_pred)
         vp2_l = vp2_norm_dist(vp_gt, vp_pred)
-        return vp1_l + vp2_l
+        return vp1_l + w * vp2_l
 
-    return _loss, 'normalized'
+    if w == 1.0:
+        return _loss, 'normalized'
+    else:
+        return _loss, 'norm{}'.format(w)
 
 
 def get_diamond_loss(loss_arg):
@@ -226,12 +237,13 @@ def parse_command_line():
     parser.add_argument('-s', '--scale', type=float, default=1.0, help='scale to use for vp')
     parser.add_argument('-d', '--diamond', action='store_true', default=False, help='whether to use diamond space for output')
     parser.add_argument('-f', '--features', type=int, default=64, help='number heatmap channels')
-    parser.add_argument('-l', '--loss', type=str, default='mse', help='which gpu to use')
+    parser.add_argument('-l', '--loss', type=str, default='1.0', help='which loss to use if a float the normalized loss is used with second vp weighed')
     parser.add_argument('-ps', '--perspective_sigma', type=float, default=25.0, help='perspective sigma for augmentation')
     parser.add_argument('-cd', '--crop_delta', type=int, default=10, help='crop delta for augmentation')
     parser.add_argument('-e', '--epochs', type=int, default=50, help='max number of epochs')
     parser.add_argument('-g', '--gpu', type=str, default='0', help='which gpu to use')
     parser.add_argument('-m', '--mobilenet', action='store_true', default=False)
+    parser.add_argument('-ns', '--no_stride', action='store_true', default=False)
     parser.add_argument('--resnet', action='store_true', default=False)
     parser.add_argument('--shutdown', action='store_true', default=False, help='shutdown the machine when done')
     parser.add_argument('-c', '--channels', type=int, default=256, help='number of channels in network')
@@ -241,6 +253,7 @@ def parse_command_line():
     parser.add_argument('--debug', action='store_true', default=False, help='enable debug where applicable')
     parser.add_argument('-de', '--dump_every', type=int, default=0)
     parser.add_argument('-mf', '--max_frames', type=int, default=5000)
+    parser.add_argument('--mask', action='store_true', default=False)
     parser.add_argument('--skip', type=int, default=1)
     # parser.add_argument('-s', '--steps', type=int, default=10000, help='steps per epoch')
     parser.add_argument('path')
