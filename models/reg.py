@@ -186,17 +186,29 @@ def vp2_norm_dist(vp_gt, vp_pred):
 
 
 def get_normalized_loss(loss_arg):
-    w = float(loss_arg)
+    w = float(loss_arg[1:])
 
-    def _loss(vp_gt, vp_pred):
-        vp1_l = vp1_norm_dist(vp_gt, vp_pred)
-        vp2_l = vp2_norm_dist(vp_gt, vp_pred)
-        return vp1_l + w * vp2_l
+    if loss_arg[0] == 'n':
+        def _loss(vp_gt, vp_pred):
+            vp1_l = vp1_norm_dist(vp_gt, vp_pred)
+            vp2_l = vp2_norm_dist(vp_gt, vp_pred)
+            return vp1_l + w * vp2_l
 
-    if w == 1.0:
-        return _loss, 'normalized'
+        if w == 1.0:
+            return _loss, 'normalized'
+        else:
+            return _loss, 'norm{}'.format(w)
+
     else:
-        return _loss, 'norm{}'.format(w)
+        def _loss(vp_gt, vp_pred):
+            vp1_l = vp1_norm_dist(vp_gt, vp_pred)
+            vp2_l = vp2_norm_dist(vp_gt, vp_pred)
+            return vp1_l ** 2 + w * vp2_l ** 2
+
+        if w == 1.0:
+            return _loss, 'sqr'
+        else:
+            return _loss, 'sqr{}'.format(w)
 
 
 def get_diamond_loss(loss_arg):
