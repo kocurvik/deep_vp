@@ -83,10 +83,7 @@ def load_model(args):
     else:
         if args.num_stacks != 1:
             raise Exception("Cannot use ResNet with multiple outputs!")
-        if args.no_stride:
-            model_name = 'resnet_diamond' if args.diamond else 'resnet_orig'
-        else:
-            model_name = 'resnet_ns_diamond' if args.diamond else 'resnet_ns_orig'
+        model_name = 'resnet_diamond' if args.diamond else 'resnet_orig'
 
 
         snapshot_dir_name = 'VP1VP2_{}_{}_{}_{}in_{}s_{}b_{}'.\
@@ -255,7 +252,6 @@ def parse_command_line():
     parser.add_argument('-e', '--epochs', type=int, default=50, help='max number of epochs')
     parser.add_argument('-g', '--gpu', type=str, default='0', help='which gpu to use')
     parser.add_argument('-m', '--mobilenet', action='store_true', default=False)
-    parser.add_argument('-ns', '--no_stride', action='store_true', default=False)
     parser.add_argument('--resnet', action='store_true', default=False)
     parser.add_argument('--shutdown', action='store_true', default=False, help='shutdown the machine when done')
     parser.add_argument('-c', '--channels', type=int, default=256, help='number of channels in network')
