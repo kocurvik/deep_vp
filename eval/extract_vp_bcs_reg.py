@@ -1,7 +1,7 @@
 import os
 import sys
 
-from eval.extract_vp_utils import save, BatchVPDetector
+from eval.extract_vp_utils import save, BatchVPDetectorReg
 from models.reg import parse_command_line, load_model
 
 import datetime
@@ -19,7 +19,7 @@ from utils.gpu import set_gpus
 
 
 def detect_session(detector, model_dir_name, data_path, session, args):
-    batch_vp_detector = BatchVPDetector(detector, args)
+    batch_vp_detector = BatchVPDetectorReg(detector, args)
 
     print("Starting object detection for ", session)
     cap = cv2.VideoCapture(os.path.join(data_path, 'dataset', session, 'video.avi'))
@@ -28,12 +28,17 @@ def detect_session(detector, model_dir_name, data_path, session, args):
 
     print("Video loaded!")
 
-    json_path = os.path.join(data_path, 'dataset', session, 'detections.json')
+    if args.mask:
+        json_path = os.path.join(data_path, 'dataset', session, 'detections_mask.json')
+        output_json_name = 'VPout_{}_r{}_mask.json'.format(model_dir_name, args.resume)
+    else:
+        json_path = os.path.join(data_path, 'dataset', session, 'detections.json')
+        output_json_name = 'VPout_{}_r{}.json'.format(model_dir_name, args.resume)
+
+    output_json_path = os.path.join(data_path, 'dataset', session, output_json_name)
+
     with open(json_path, 'r') as f:
         detection_data = json.load(f)
-
-    output_json_name = 'VPout_{}_r{}.json'.format(model_dir_name, args.resume)
-    output_json_path = os.path.join(data_path, 'dataset', session, output_json_name)
 
     total_box_count = sum([len(item['boxes']) for item in detection_data])
     print("Loaded {} bounding boxes for {} frames".format(total_box_count, len(detection_data)))
@@ -56,13 +61,19 @@ def detect_session(detector, model_dir_name, data_path, session, args):
 
         boxes = detection['boxes']
         scores = detection['scores']
+        if args.mask:
+            masks = detection['masks']
 
         if args.debug:
             show_debug(np.copy(frame), boxes)
 
-        for box, score in zip(boxes, scores):
+        for i in range(len(boxes)):
             box_cnt += 1
-            batch_vp_detector.process(frame, box, score, frame_cnt=frame_cnt)
+
+            if args.mask:
+                batch_vp_detector.process(frame, boxes[i], scores[i], frame_cnt=frame_cnt, mask=masks[i])
+            else:
+                batch_vp_detector.process(frame, boxes[i], scores[i], frame_cnt=frame_cnt)
 
             if args.dump_every != 0 and box_cnt % args.dump_every == 0:
                 print("Saving at box ", box_cnt)

@@ -1,38 +1,37 @@
 import os
+
+from eval.extract_vp_utils import save, BatchVPDetectorHeatmap, filter_boxes_bcp
+from models.hourglass import parse_command_line, load_model
+
 import datetime
 import json
 import time
 
 import cv2
 import numpy as np
-
 from object_detection.detect_utils import show_debug
-from eval.extract_vp_utils import save, BatchVPDetectorHeatmap
-from models.hourglass import parse_command_line, load_model
+
 from utils.gpu import set_gpus
 
 
 def detect_session(detector, model_dir_name, data_path, session, args, scales):
     batch_vp_detector = BatchVPDetectorHeatmap(detector, args, scales)
 
-    print("Starting object detection for ", session)
-    cap = cv2.VideoCapture(os.path.join(data_path, 'dataset', session, 'video.avi'))
-    # DO NOT REMOVE OTHERWISE FRAMES WILL NOT SYNC
-    total_frames = cap.get(cv2.CAP_PROP_FRAME_COUNT)
-
-    print("Video loaded!")
+    print("Starting vp detection for ", session)
 
     if args.mask:
-        json_path = os.path.join(data_path, 'dataset', session, 'detections_mask.json')
         output_json_name = 'VPout_{}_r{}_mask.json'.format(model_dir_name, args.resume)
+        json_path = os.path.join(data_path, 'data', session, 'detections_mask.json')
     else:
-        json_path = os.path.join(data_path, 'dataset', session, 'detections.json')
         output_json_name = 'VPout_{}_r{}.json'.format(model_dir_name, args.resume)
-
-    output_json_path = os.path.join(data_path, 'dataset', session, output_json_name)
+        json_path = os.path.join(data_path, 'data', session, 'detections.json')
 
     with open(json_path, 'r') as f:
         detection_data = json.load(f)
+
+    detection_data = detection_data[:args.max_frames]
+
+    output_json_path = os.path.join(data_path, 'data', session, output_json_name)
 
     total_box_count = sum([len(item['boxes']) for item in detection_data])
     print("Loaded {} bounding boxes for {} frames".format(total_box_count, len(detection_data)))
@@ -40,41 +39,40 @@ def detect_session(detector, model_dir_name, data_path, session, args, scales):
 
     start_time = time.time()
 
+    # running_average_frame = np.zeros([1080, 1920, 2], dtype=np.float32)
+    prev_edge = None
+    masks = None
+
     for detection in detection_data:
-        for _ in range(args.skip):
-            ret, frame = cap.read()
-
-        if not ret or frame is None:
-            break
-
-        frame_cnt_orig = cap.get(cv2.CAP_PROP_POS_FRAMES)
+        frame_filename = detection['filename']
+        frame = cv2.imread(os.path.join(data_path, 'frames', session, frame_filename))
         frame_cnt = detection['frame_cnt']
-
-        if frame_cnt != frame_cnt_orig:
-            raise Exception("Frames from OD do not match frames now! Wrong skip param?")
 
         boxes = detection['boxes']
         scores = detection['scores']
+
+        box_cnt += len(boxes)
+
         if args.mask:
             masks = detection['masks']
+
+        boxes, scores, masks, prev_edge = filter_boxes_bcp(boxes, scores, frame, prev_edge, masks=masks)
 
         if args.debug:
             show_debug(np.copy(frame), boxes)
 
         for i in range(len(boxes)):
-            box_cnt += 1
-
             if args.mask:
-                batch_vp_detector.process(frame, boxes[i], scores[i], frame_cnt=frame_cnt, mask=masks[i])
+                batch_vp_detector.process(frame, boxes[i], scores[i], frame_cnt=frame_cnt, frame_filename=frame_filename, mask=masks[i])
             else:
-                batch_vp_detector.process(frame, boxes[i], scores[i], frame_cnt=frame_cnt)
+                batch_vp_detector.process(frame, boxes[i], scores[i], frame_cnt=frame_cnt, frame_filename=frame_filename)
 
             if args.dump_every != 0 and box_cnt % args.dump_every == 0:
                 print("Saving at box ", box_cnt)
                 save(output_json_path, batch_vp_detector.output_list)
 
         remaining_seconds = (time.time() - start_time) / (box_cnt + 1) * (total_box_count - box_cnt)
-        print('Frame {}, Box: {} / {}, ETA: {}'.format(frame_cnt, box_cnt, total_box_count, datetime.timedelta(seconds=remaining_seconds)))
+        print('{} : {}, Box: {} / {}, ETA: {}'.format(frame_cnt, frame_filename, box_cnt, total_box_count, datetime.timedelta(seconds=remaining_seconds)))
 
     batch_vp_detector.finalize()
     print("Saving at box ", box_cnt)
@@ -86,14 +84,15 @@ def detect():
     args = parse_command_line()
     set_gpus()
 
-    scales = [0.03, 0.1, 0.3, 1.0]
+    scales = [0.03, 0.01, 0.3, 1.0]
 
     model, model_dir_name, _ = load_model(args, scales)
 
     data_path = args.path
-    sessions = os.listdir(os.path.join(data_path, 'dataset'))
+    sessions = sorted(os.listdir(os.path.join(data_path, 'data')))
     for session in sessions:
         detect_session(model, model_dir_name, data_path, session, args, scales)
+
 
 if __name__ == '__main__':
     detect()
