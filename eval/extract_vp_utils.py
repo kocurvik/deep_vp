@@ -375,6 +375,12 @@ class BatchVPDetectorHeatmap(BatchVPDetectorBase):
             vp1 = item['box_scale'] * vp1_box + item['box_center']
             vp2 = item['box_scale'] * vp2_box + item['box_center']
 
+            item['vp1_var'] = vp1_var[vp1_var_idx]
+            item['vp2_var'] = vp1_var[vp2_var_idx]
+
+            item['pred_vps'] = pred_vp.tolist
+            item['pred_vars'] = pred_var.tolist()
+
             item['box_scale'] = item['box_scale'].tolist()
             item['box_center'] = item['box_center'].tolist()
             item['vp1_box'] = vp1_box.tolist()
