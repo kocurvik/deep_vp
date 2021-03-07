@@ -44,7 +44,7 @@ def detect_session(detector, model_dir_name, data_path, session, args):
     prev_edge = None
     masks = None
 
-    for detection in detection_data:
+    for detection_cnt, detection in enumerate(detection_data):
         frame_filename = detection['filename']
         frame = cv2.imread(os.path.join(data_path, 'frames', session, frame_filename))
         frame_cnt = detection['frame_cnt']
@@ -68,9 +68,9 @@ def detect_session(detector, model_dir_name, data_path, session, args):
             else:
                 batch_vp_detector.process(frame, boxes[i], scores[i], frame_cnt=frame_cnt, frame_filename=frame_filename)
 
-            if args.dump_every != 0 and box_cnt % args.dump_every == 0:
-                print("Saving at box ", box_cnt)
-                save(output_json_path, batch_vp_detector.output_list)
+        if args.dump_every != 0 and detection_cnt % args.dump_every == 0:
+            print("Saving at detection ", detection_cnt)
+            save(output_json_path, batch_vp_detector.output_list)
 
         remaining_seconds = (time.time() - start_time) / (box_cnt + 1) * (total_box_count - box_cnt)
         print('{} : {}, Box: {} / {}, ETA: {}'.format(frame_cnt, frame_filename, box_cnt, total_box_count, datetime.timedelta(seconds=remaining_seconds)))

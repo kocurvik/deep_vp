@@ -40,7 +40,7 @@ def detect_session(detector, model_dir_name, data_path, session, args, scales):
 
     start_time = time.time()
 
-    for detection in detection_data:
+    for detection_cnt, detection in enumerate(detection_data):
         for _ in range(args.skip):
             ret, frame = cap.read()
 
@@ -69,9 +69,9 @@ def detect_session(detector, model_dir_name, data_path, session, args, scales):
             else:
                 batch_vp_detector.process(frame, boxes[i], scores[i], frame_cnt=frame_cnt)
 
-            if args.dump_every != 0 and box_cnt % args.dump_every == 0:
-                print("Saving at box ", box_cnt)
-                save(output_json_path, batch_vp_detector.output_list)
+        if args.dump_every != 0 and detection_cnt % args.dump_every == 0:
+            print("Saving at detection ", detection_cnt)
+            save(output_json_path, batch_vp_detector.output_list)
 
         remaining_seconds = (time.time() - start_time) / (box_cnt + 1) * (total_box_count - box_cnt)
         print('Frame {}, Box: {} / {}, ETA: {}'.format(frame_cnt, box_cnt, total_box_count, datetime.timedelta(seconds=remaining_seconds)))
