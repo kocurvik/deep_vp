@@ -104,7 +104,6 @@ def get_transform_matrix(vp1, vp2, image, im_w, im_h, pts=None, enforce_vp1=True
     vp1p1, vp1p2 = find_cornerpts(vp1, pts)
     vp2p1, vp2p2 = find_cornerpts(vp2, pts)
 
-
     # right side
     vp1l1 = line(vp1, pts[vp1p1])
     # left side
@@ -159,63 +158,66 @@ def get_transform_matrix(vp1, vp2, image, im_w, im_h, pts=None, enforce_vp1=True
     return cv2.getPerspectiveTransform(t_ipts, t_pts), cv2.getPerspectiveTransform(t_pts, t_ipts)
 
 
-def get_lp(img):
-    gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    cv2.imshow("edge img", cv2.bilateralFilter(img, 5, 150, 50))
+def get_lp(img, mask):
+    filtered_img = cv2.bilateralFilter(img, 9, 200, 50)
+    # filtered_img = cv2.bilateralFilter(filtered_img, 9, 150, 50)
+    gray_img = cv2.cvtColor(filtered_img, cv2.COLOR_BGR2GRAY)
+
+    gray_mean = np.mean(gray_img[mask > 127])
     cv2.waitKey(0)
-    mser = cv2.MSER_create(_delta=5, _max_variation=0.25)
+    mser = cv2.MSER_create(_delta=3, _max_variation=0.1)
 
     # regions, bboxes = mser.detectRegions(cv2.edgePreservingFilter(img))
-    regions, bboxes = mser.detectRegions(cv2.bilateralFilter(img, 5, 150, 50))
+    regions, bboxes = mser.detectRegions(filtered_img)
     # regions, bboxes = mser.detectRegions(cv2.blur(img, (11, 11)))
     # regions, bboxes = mser.detectRegions(gray_img)
     # print(len(regions))
 
-    vis_img = np.copy(img)
+    # vis_img = np.copy(img)
 
     best_bbox_area = 0
     best_region = None
 
     for region in regions:
-        # if np.mean(gray_img[region[:, 1], region[:, 0]]) < 100:
-        #     continue
+        if np.mean(gray_img[region[:, 1], region[:, 0]]) < gray_mean:
+            continue
 
         x_min = np.min(region[:, 0])
         x_max = np.max(region[:, 0])
         y_min = np.min(region[:, 1])
         y_max = np.max(region[:, 1])
 
-        # if (x_max - x_min)/(y_max - y_min) < 1.5:
-        #     continue
+        if (x_max - x_min)/(y_max - y_min) < 1.5:
+            continue
 
         bbox_area = (x_max - x_min) * (y_max - y_min)
 
-        if np.abs(bbox_area - len(region)) > 0.2 * len(region):
+        if np.abs(bbox_area - len(region)) > 0.1 * len(region):
             continue
 
         if bbox_area > best_bbox_area:
             best_bbox_area = bbox_area
             best_region = region
 
-        vis_img[region[:, 1], region[:, 0]] = np.array([0, 255, 0], dtype=np.uint8)
-        vis_img = cv2.rectangle(vis_img, (int(x_min), int(y_min)), (int(x_max), int(y_max)), (0, 255, 255))
-        cv2.imshow("Reg", vis_img)
-        cv2.waitKey(0)
+        # vis_img[region[:, 1], region[:, 0]] = np.array([0, 255, 0], dtype=np.uint8)
+        # vis_img = cv2.rectangle(vis_img, (int(x_min), int(y_min)), (int(x_max), int(y_max)), (0, 255, 255))
+        # cv2.imshow("Reg", vis_img)
+        # cv2.waitKey(0)
 
     if best_region is None:
         return None, None
 
     x_min = np.min(best_region[:, 0])
     x_max = np.max(best_region[:, 0])
-    y_min = np.min(best_region[:, 1])
-    y_max = np.max(best_region[:, 1])
+    # y_min = np.min(best_region[:, 1])
+    # y_max = np.max(best_region[:, 1])
 
-    vis_img[best_region[:, 1], best_region[:, 0]] = np.array([0, 255, 0], dtype=np.uint8)
-    vis_img = cv2.rectangle(vis_img, (int(x_min), int(y_min)), (int(x_max), int(y_max)), (0, 255, 255))
-    cv2.imshow("Reg", vis_img)
-    cv2.waitKey(0)
+    # vis_img[best_region[:, 1], best_region[:, 0]] = np.array([0, 255, 0], dtype=np.uint8)
+    # vis_img = cv2.rectangle(vis_img, (int(x_min), int(y_min)), (int(x_max), int(y_max)), (0, 255, 255))
+    # cv2.imshow("Reg", vis_img)
+    # cv2.waitKey(0)
 
-    return y_min, y_max
+    return x_min, x_max
 
 
 def save(json_path, detection_list):
@@ -235,6 +237,9 @@ class BatchVPDetectorBase():
 
     def process(self, frame, box, score, **kwargs):
         self.last_frame = frame
+
+        if score < 0.5:
+            return
 
         x_min = int(frame.shape[1] * box[1])
         y_min = int(frame.shape[0] * box[0])
@@ -264,6 +269,9 @@ class BatchVPDetectorBase():
             self.predict()
 
     def get_lp_from_mask(self, item):
+        item['lp1'] = None
+        item['lp2'] = None
+
         mask_frame = get_mask_frame(item['box'], self.last_frame, np.array(item['mask']))
         _, mask_frame = cv2.threshold(mask_frame, 0.5, 255, cv2.THRESH_BINARY)
 
@@ -280,24 +288,38 @@ class BatchVPDetectorBase():
         pp = np.array([self.last_frame.shape[1] / 2 + 0.5, self.last_frame.shape[0] / 2 + 0.5])
         vp3 = get_vp3(vp1, vp2, pp)
 
-        if vp3.isnan().any():
+        if np.isnan(vp3).any():
             return item
 
         mask_pts = get_pts_from_mask(mask_frame.astype(np.uint8), vp3, vp2)
 
-        for p in mask_pts:
-            image = cv2.circle(image, (int(p[0]), int(p[1])), 3, (0, 0, 255), thickness=-1)
-
-        cv2.imshow("Img with mask pts", image)
+        # for p in mask_pts:
+        #     image = cv2.circle(image, (int(p[0]), int(p[1])), 3, (0, 0, 255), thickness=-1)
+        # cv2.imshow("Img with mask pts", image)
 
         M, IM = get_transform_matrix(vp3, vp2, image, 300, 300, pts=mask_pts, vp_top=vp1)
 
         warped_image = cv2.warpPerspective(image, M, (300, 300))
+        warped_mask = cv2.warpPerspective(mask_frame, M, (300, 300))
 
-        cv2.imshow("warped image", warped_image)
-        cv2.waitKey(0)
+        # cv2.imshow("warped image", warped_image)
+        # cv2.waitKey(0)
 
-        lp_p1, lp_p2 = get_lp(warped_image[150:])
+        lp_warped_x1, lp_warped_x2 = get_lp(warped_image[150:], warped_mask[150:])
+
+        if lp_warped_x1 is None or lp_warped_x2 is None:
+            return item
+
+        lps_warped = np.array([[[lp_warped_x1, 300]], [[lp_warped_x2, 300]]], dtype=np.float32)
+        lps = cv2.perspectiveTransform(lps_warped, IM)
+
+        item['lp1'] = lps[0, 0, :].tolist()
+        item['lp2'] = lps[1, 0, :].tolist()
+
+        # image = cv2.circle(image, (int(item['lp1'][0]), int(item['lp1'][1])), 3, (0, 0, 255), thickness=-1)
+        # image = cv2.circle(image, (int(item['lp2'][0]), int(item['lp2'][1])), 3, (0, 0, 255), thickness=-1)
+        # cv2.imshow("Img with mask pts", image)
+        # cv2.waitKey(0)
 
         return item
 
