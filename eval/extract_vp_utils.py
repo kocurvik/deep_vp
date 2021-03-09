@@ -238,9 +238,6 @@ class BatchVPDetectorBase():
     def process(self, frame, box, score, **kwargs):
         self.last_frame = frame
 
-        if score < 0.5:
-            return
-
         x_min = int(frame.shape[1] * box[1])
         y_min = int(frame.shape[0] * box[0])
         x_max = int(frame.shape[1] * box[3] + 1)
