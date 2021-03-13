@@ -84,9 +84,7 @@ def detect():
     args = parse_command_line()
     set_gpus()
 
-    scales = [0.03, 0.01, 0.3, 1.0]
-
-    model, model_dir_name, _ = load_model(args, scales)
+    model, scales, model_dir_name, _ = load_model(args)
 
     data_path = args.path
     sessions = sorted(os.listdir(os.path.join(data_path, 'data')))

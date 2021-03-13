@@ -14,9 +14,7 @@ def preview():
     args = parse_command_line()
     os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
 
-    scales = [0.03, 0.1, 0.3, 1.0]
-
-    heatmap_model, _, _ = load_model(args, scales)
+    heatmap_model, scales, _, _ = load_model(args)
 
     print("Heatmap model loaded!")
 

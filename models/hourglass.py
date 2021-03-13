@@ -1,5 +1,6 @@
 import argparse
 import os
+import string
 
 from tensorflow import keras
 import tensorflow as tf
@@ -216,18 +217,24 @@ def create_heads(prelayerfeatures, rf1, num_classes, hgid, num_channels):
     return head_next_stage, head_parts
 
 
-def load_model(args, scales):
+def load_model(args):
     print("Initializing model")
     print("Batch size: ", args.batch_size)
     print("Num stacks: ", args.num_stacks)
     print("Input size: {} x {}".format(args.input_size, args.input_size))
     print("Heatmap size: {} x {}".format(args.heatmap_size, args.heatmap_size))
     print("Training for {} epochs".format(args.epochs))
-    print("Scales: ", scales)
     print("Channels: ", args.channels)
     print("Experiment number: ", args.experiment)
     print("Mobilenet version: ", args.mobilenet)
     print("Heatmap distribution constructed in original coords: ", args.peak_original)
+
+    if len(args.scales) == 0:
+        scales = [0.03, 0.1, 0.3, 1]
+        scales_str = '4'
+    else:
+        scales = [float(x) for x in args.scales]
+        scales_str = '-'.join(args.scales)
 
     if args.mobilenet:
         module = 'mobilenet'
@@ -250,7 +257,7 @@ def load_model(args, scales):
 
 
     snapshot_dir_name = 'VP1VP2{}_{}_{}_{}in_{}out_{}s_{}n_{}b_{}c_{}'.format(module_str, peak_str, aug_str, args.input_size, args.heatmap_size,
-                                                                        len(scales), args.num_stacks, args.batch_size,
+                                                                        scales_str, args.num_stacks, args.batch_size,
                                                                         args.channels, args.experiment)
     snapshot_dir_path = os.path.join('snapshots', snapshot_dir_name)
 
@@ -268,7 +275,7 @@ def load_model(args, scales):
 
         resume_dir_name = 'VP1VP2{}_{}_{}_{}in_{}out_{}s_{}n_{}b_{}c_{}'.format(module_str, peak_str, aug_str, args.input_size,
                                                                                args.heatmap_size,
-                                                                               len(scales), args.num_stacks,
+                                                                               scales_str, args.num_stacks,
                                                                                args.batch_size,
                                                                                args.channels, args.experiment_resume)
 
@@ -276,7 +283,7 @@ def load_model(args, scales):
         print("Loading model", resume_model_path)
         model.load_weights(resume_model_path)
 
-    return model, snapshot_dir_name, snapshot_dir_path
+    return model, scales, snapshot_dir_name, snapshot_dir_path
 
 
 def parse_command_line():
@@ -291,6 +298,7 @@ def parse_command_line():
     parser.add_argument('-e', '--epochs', type=int, default=50, help='max number of epochs')
     parser.add_argument('-g', '--gpu', type=str, default='0', help='which gpu to use')
     parser.add_argument('-m', '--mobilenet', action='store_true', default=False)
+    parser.add_argument('-s', '--scales', nargs='*', action='store')
     parser.add_argument('-ps', '--perspective_sigma', type=float, default=25.0, help='perspective sigma for augmentation')
     parser.add_argument('-cd', '--crop_delta', type=int, default=10, help='crop delta for augmentation')
     parser.add_argument('-po', '--peak_original', action='store_true', default=False, help='whether to construct the peak in the original space')

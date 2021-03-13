@@ -13,9 +13,7 @@ def eval():
 
     set_gpus()
 
-    scales = [0.03, 0.1, 0.3, 1.0]
-
-    model, snapshot_dir_name, _ = load_model(args, scales)
+    model, scales, snapshot_dir_name, _ = load_model(args)
     print("Heatmap model loaded")
 
     test_dataset = RegBoxCarsDataset(args.path, 'test', batch_size=args.batch_size_eval, img_size=args.input_size, num_stacks=1,

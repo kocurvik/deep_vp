@@ -14,9 +14,8 @@ def train():
 
     set_gpus()
 
-    scales = [0.03, 0.1, 0.3, 1.0]
 
-    model, snapshot_dir_name, snapshot_dir_path = load_model(args, scales)
+    model, scales, snapshot_dir_name, snapshot_dir_path = load_model(args)
 
     adam = keras.optimizers.Adam(args.lr)
     model.compile(adam, 'MSE', metrics=[heatmap_mean_accuracy(args.batch_size, args.heatmap_size, len(scales) * 2)])
