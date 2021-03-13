@@ -231,6 +231,13 @@ class HeatmapBoxCarsDataset(keras.utils.Sequence):
         warped_vp1[1] /= (y_max - y_min) / 2.0
         warped_vp2[1] /= (y_max - y_min) / 2.0
 
+
+        # print("vp1: ", warped_vp1)
+        # print("vp2: ", warped_vp2)
+        #
+        # print("vp1 diamond:",  diamond_coords_from_original(warped_vp1, 1.0))
+        # print("vp2 diamond:",  diamond_coords_from_original(warped_vp2, 1.0))
+
         heatmaps = self.generate_heatmaps([warped_vp1, warped_vp2])
 
         out_img = warped_img / 255
@@ -254,7 +261,7 @@ if __name__ == '__main__':
     path = 'D:/Skola/PhD/Data/BoxCars116k/'
 
     scales = [0.03, 0.1, 0.3, 1.0]
-    heatmap_out = 128
+    heatmap_out = 64
     # scales = [0.1, 1.0]
     peak_original = False
 
@@ -266,12 +273,16 @@ if __name__ == '__main__':
         orig_coord_heatmap[np.isinf(orig_coord_heatmap)] = 0
         orig_coord_heatmaps.append(orig_coord_heatmap)
 
-    d = HeatmapBoxCarsDataset(path, 'train', img_size=128, heatmap_size=heatmap_out, scales=scales, peak_original=peak_original)
+    # d = HeatmapBoxCarsDataset(path, 'train', img_size=128, heatmap_size=heatmap_out, scales=scales, peak_original=peak_original)
+    d = HeatmapBoxCarsDataset(path, 'val', img_size=1024, heatmap_size=heatmap_out, scales=scales, peak_original=peak_original)
 
     cum_heatmap = np.zeros([heatmap_out, heatmap_out, 2*len(scales)])
 
-    for _ in range(10000):
-        i = np.random.choice(len(d.instance_list))
+    # for _ in range(10000):
+    #     i = np.random.choice(len(d.instance_list))
+    for i in [1856, 3815, 3611]:
+        print("idx: ", i)
+
         img, heatmap = d.get_single_item(i)
 
         cum_heatmap += heatmap
@@ -279,6 +290,9 @@ if __name__ == '__main__':
         print(np.sum(heatmap))
 
         cv2.imshow("Img", img)
+
+        stop = [False, False]
+
         for vp_idx in range(2):
             for scale_idx, scale in enumerate(scales):
                 idx = len(scales) * vp_idx + scale_idx
@@ -289,10 +303,23 @@ if __name__ == '__main__':
                 else:
                     vp, std  = process_heatmap_old(heatmap[:, :, idx], scale)
 
-
                 print(vp, std)
 
-        cv2.waitKey(1)
+            if np.abs(vp[0]) < 7 and np.abs(vp[1]) < 3:
+                stop[vp_idx] = True
+
+
+        if stop[0] and stop[1]:
+            cv2.imwrite("img_{}.png".format(i), 255 * img)
+            cv2.imwrite("heatmap_vp1_{}.png".format(i), 255 * heatmap[:, :, 3])
+            cv2.imwrite("heatmap_vp2_{}.png".format(i), 255 * heatmap[:, :, -1])
+
+            cv2.imwrite("heatmap_cmap_vp1_{}.png".format(i), cv2.applyColorMap(np.uint8(255 * heatmap[:, :, 3]), cv2.COLORMAP_PARULA))
+            cv2.imwrite("heatmap_cmap_vp2_{}.png".format(i), cv2.applyColorMap(np.uint8(255 * heatmap[:, :, -1]), cv2.COLORMAP_PARULA))
+
+            cv2.waitKey(1)
+        else:
+            cv2.waitKey(1)
 
 
 
