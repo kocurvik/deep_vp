@@ -298,7 +298,7 @@ def parse_command_line():
     parser.add_argument('-e', '--epochs', type=int, default=50, help='max number of epochs')
     parser.add_argument('-g', '--gpu', type=str, default='0', help='which gpu to use')
     parser.add_argument('-m', '--mobilenet', action='store_true', default=False)
-    parser.add_argument('-s', '--scales', nargs='*', action='store')
+    parser.add_argument('-s', '--scales', nargs='*', action='store', default=[])
     parser.add_argument('-ps', '--perspective_sigma', type=float, default=25.0, help='perspective sigma for augmentation')
     parser.add_argument('-cd', '--crop_delta', type=int, default=10, help='crop delta for augmentation')
     parser.add_argument('-po', '--peak_original', action='store_true', default=False, help='whether to construct the peak in the original space')
