@@ -345,6 +345,8 @@ class BatchVPDetectorReg(BatchVPDetectorBase):
     def predict(self):
         cars = [item['car_img'] for item in self.q]
         preds = self.model.predict(np.array(cars) / 255)
+        if isinstance(preds, list):
+            preds = preds[-1]
         for pred, item in zip(preds, self.q):
             vp1_box = pred[:2]
             vp2_box = pred[2:]
