@@ -17,7 +17,7 @@ def eval():
     print("Heatmap model loaded")
 
     test_dataset = RegBoxCarsDataset(args.path, 'test', batch_size=args.batch_size_eval, img_size=args.input_size, num_stacks=1,
-                                     use_diamond=False)
+                                     use_diamond=False, scale=1.0, perspective_sigma=0.0, crop_delta=0)
 
     gt_vp_list = []
     pred_vp_list = []
