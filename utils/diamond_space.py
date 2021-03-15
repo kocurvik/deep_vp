@@ -88,7 +88,7 @@ def process_heatmaps(heatmaps, scales):
     for i in range(heatmaps.shape[0]):
         for j, scale in enumerate(scales):
             heatmap_vp1 = heatmaps[i, :, :, j]
-            heatmap_vp2 = heatmaps[i, :, :, j + 4]
+            heatmap_vp2 = heatmaps[i, :, :, j + len(scales)]
 
             vp1, vp1_dist = process_heatmap_old(heatmap_vp1, scale)
             vp2, vp2_dist = process_heatmap_old(heatmap_vp2, scale)
