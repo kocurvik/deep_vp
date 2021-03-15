@@ -43,8 +43,12 @@ def eval():
     print('*' * 80)
     print("Median vp1 abs distance: {}".format(np.nanmedian(vp1_d)))
     print("Median vp2 abs distance: {}".format(np.nanmedian(vp2_d)))
+    print("Mean vp1 abs distance: {}".format(np.nanmean(vp1_d)))
+    print("Mean vp2 abs distance: {}".format(np.nanmean(vp2_d)))
     print("Median vp1 rel distance: {}".format(np.nanmedian(vp1_d / vp1_gt_norm)))
     print("Median vp2 rel distance: {}".format(np.nanmedian(vp2_d / vp2_gt_norm)))
-        
+    print("Mean vp1 rel distance: {}".format(np.nanmean(vp1_d / vp1_gt_norm)))
+    print("Mean vp2 rel distance: {}".format(np.nanmean(vp2_d / vp2_gt_norm)))
+
 if __name__ == '__main__':
     eval()
