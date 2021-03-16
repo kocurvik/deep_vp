@@ -50,11 +50,14 @@ def detect_session(detector, model_dir_name, data_path, session, args, scales):
 
         boxes = detection['boxes']
         scores = detection['scores']
+        del detection['boxes']
+        del detection['scores']
 
         box_cnt += len(boxes)
 
         if args.mask:
             masks = detection['masks']
+            del detection['masks']
 
         boxes, scores, masks, prev_edge = filter_boxes_bcp(boxes, scores, frame, prev_edge, masks=masks)
 
