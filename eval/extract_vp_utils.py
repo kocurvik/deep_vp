@@ -272,6 +272,8 @@ class BatchVPDetectorBase():
         mask_frame = get_mask_frame(item['box'], self.last_frame, np.array(item['mask']))
         _, mask_frame = cv2.threshold(mask_frame, 0.5, 255, cv2.THRESH_BINARY)
 
+        del item['mask']
+
         image = np.zeros_like(self.last_frame)
         x_min = item['vp_box'][1]
         y_min = item['vp_box'][0]
