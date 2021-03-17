@@ -46,8 +46,9 @@ def get_system_projector(data):
     vp1 = np.array(data["camera_calibration"]["vp1"])
     vp2 = np.array(data["camera_calibration"]["vp2"])
     pp = np.array(data["camera_calibration"]["pp"])
+    scale = np.array(data["camera_calibration"]["scale"])
 
-    return get_projector(vp1, vp2, pp)
+    return get_projector(vp1, vp2, pp), scale
 
 
 def eval_pure_calibration(distances, projector):
@@ -61,6 +62,22 @@ def eval_pure_calibration(distances, projector):
         real_ratio = distances[ind1]["distance"] / distances[ind2]["distance"]
         rel_errors.append(abs(image_ratio - real_ratio) / real_ratio * 100)
         abs_errors.append(abs(image_ratio - real_ratio))
+    return rel_errors, abs_errors
+
+
+def eval_scale_calibration(distances, projector, scale):
+    rel_errors = []
+    abs_errors = []
+
+    for d in distances:
+        img_p1 = d["p1"]
+        img_p2 = d["p2"]
+        dist = d["distance"]
+
+        image_dist = scale * np.linalg.norm(projector(img_p1) - projector(img_p2))
+
+        rel_errors.append(abs(image_dist - dist) / dist * 100)
+        abs_errors.append(abs(image_dist - dist))
     return rel_errors, abs_errors
 
 
@@ -91,9 +108,10 @@ def eval_session_bcs(path, session):
         with open(system_path, 'r') as f:
             system_data = json.load(f)
 
-        projector = get_system_projector(system_data)
+        projector, scale = get_system_projector(system_data)
         rel_errors, abs_errors = eval_pure_calibration(distance_measurement, projector)
-        out[system] = {'rel_errors': rel_errors, 'abs_errors': abs_errors}
+        rel_scale_errors, abs_scale_errors =  eval_scale_calibration(distance_measurement, projector, scale)
+        out[system] = {'rel_errors': rel_errors, 'abs_errors': abs_errors, 'rel_scale_errors': rel_scale_errors, 'abs_scale_errors': abs_scale_errors}
 
     return out
 
@@ -113,9 +131,10 @@ def eval_session_bcp(path, session):
         with open(system_path, 'r') as f:
             system_data = json.load(f)
 
-        projector = get_system_projector(system_data)
+        projector, scale = get_system_projector(system_data)
         rel_errors, abs_errors = eval_pure_calibration(distance_measurement, projector)
-        out[system] = {'rel_errors': rel_errors, 'abs_errors': abs_errors}
+        rel_scale_errors, abs_scale_errors =  eval_scale_calibration(distance_measurement, projector, scale)
+        out[system] = {'rel_errors': rel_errors, 'abs_errors': abs_errors, 'rel_scale_errors': rel_scale_errors, 'abs_scale_errors': abs_scale_errors}
 
     return out
 
@@ -145,9 +164,15 @@ def eval_calib():
         rel_errors = []
         abs_errors = []
 
+        rel_scale_errors = []
+        abs_scale_errors = []
+
         for session in sessions:
             rel_errors.extend(results[session][system]['rel_errors'])
             abs_errors.extend(results[session][system]['abs_errors'])
+
+            rel_scale_errors.extend(results[session][system]['rel_scale_errors'])
+            abs_scale_errors.extend(results[session][system]['abs_scale_errors'])
 
             # rel_errors.append(np.mean(results[session][system]['rel_errors']))
             # abs_errors.append(np.mean(results[session][system]['abs_errors']))
@@ -160,17 +185,20 @@ def eval_calib():
             np.mean(rel_errors), np.median(rel_errors),
             np.mean(abs_errors), np.median(abs_errors)))
 
+        print("For {} scale mean rel err: {}, scale median rel err {}, scale mean abs err {}, scale median abs err {}".format(system,
+            np.mean(rel_scale_errors), np.median(rel_scale_errors),
+            np.mean(abs_scale_errors), np.median(abs_scale_errors)))
+
     print("**************************")
     print("Eval BrnoCarPark")
     print("**************************")
-
 
     sessions = ['S{:02d}'.format(i) for i in range(args.start_bcp, args.end_bcp + 1)]
 
     for session in sessions:
         results[session] = eval_session_bcp(args.bcp_path, session)
 
-        systems = results[sessions[0]].keys()
+    systems = results[sessions[0]].keys()
 
     for system in systems:
         # print("For system ", system)
@@ -178,9 +206,15 @@ def eval_calib():
         rel_errors = []
         abs_errors = []
 
+        rel_scale_errors = []
+        abs_scale_errors = []
+
         for session in sessions:
             rel_errors.extend(results[session][system]['rel_errors'])
             abs_errors.extend(results[session][system]['abs_errors'])
+
+            rel_scale_errors.extend(results[session][system]['rel_scale_errors'])
+            abs_scale_errors.extend(results[session][system]['abs_scale_errors'])
 
             # rel_errors.append(np.mean(results[session][system]['rel_errors']))
             # abs_errors.append(np.mean(results[session][system]['abs_errors']))
@@ -194,6 +228,9 @@ def eval_calib():
             np.nanmean(rel_errors), np.nanmedian(rel_errors),
             np.nanmean(abs_errors), np.nanmedian(abs_errors)))
 
+        print("For {} scale mean rel err: {}, scale median rel err {}, scale mean abs err {}, scale median abs err {}".format(system,
+            np.mean(rel_scale_errors), np.median(rel_scale_errors),
+            np.mean(abs_scale_errors), np.median(abs_scale_errors)))
 
 
 if __name__ == '__main__':

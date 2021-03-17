@@ -23,8 +23,8 @@ def parse_command_line():
     return args
 
 
-def get_calib_dict(vp1, vp2, pp):
-    return {'cars': [], 'camera_calibration': {"pp": [pp[0], pp[1]], "scale": 1.0, "vp1": [vp1[0], vp1[1]], "vp2": [vp2[0], vp2[1]]}}
+def get_calib_dict(vp1, vp2, pp, scale=1.0):
+    return {'cars': [], 'camera_calibration': {"pp": [pp[0], pp[1]], "scale": scale, "vp1": [vp1[0], vp1[1]], "vp2": [vp2[0], vp2[1]]}}
 
 
 def show_vps(vp1s, vp2s, session):
@@ -47,11 +47,14 @@ def show_vps(vp1s, vp2s, session):
     vp1s = vp1s / 40 + zero
     vp2s = vp2s / 40 + zero
 
-    for vp1, vp2 in zip(vp1s[:20], vp2s[:20]):
-        cv2.circle(canvas, (int(vp1[0]), int(vp1[1])), radius=1, color=(0, 255, 0))
-        cv2.circle(canvas, (int(vp2[0]), int(vp2[1])), radius=1, color=(0, 0, 255))
-        cv2.line(canvas, (int(vp1[0]), int(vp1[1])), (int(vp2[0]), int(vp2[1])), color=(0, 255, 255))
-        cv2.imshow("Canvas", canvas)
+    for vp1, vp2 in zip(vp1s[:100], vp2s[:100]):
+        try:
+            cv2.circle(canvas, (int(vp1[0]), int(vp1[1])), radius=1, color=(0, 255, 0))
+            cv2.circle(canvas, (int(vp2[0]), int(vp2[1])), radius=1, color=(0, 0, 255))
+            cv2.line(canvas, (int(vp1[0]), int(vp1[1])), (int(vp2[0]), int(vp2[1])), color=(0, 255, 255))
+            cv2.imshow("Canvas", canvas)
+        except Exception:
+            ...
         # cv2.waitKey(1)
     cv2.waitKey(0)
 
@@ -167,6 +170,24 @@ def export_calib_session(session, args, json_name, bcp=False):
     if bcp:
         vp_data = filter_vp(vp_data)
 
+    if 'pred_vars' in vp_data[0].keys():
+        pred_vars = np.array([item['pred_vars'] for item in vp_data if item['score'] > args.conf])
+        pred_vars_vp1 = pred_vars[:, :, 0]
+        pred_vars_vp2 = pred_vars[:, :, 1]
+        best_scales_vp1 = np.argmin(pred_vars_vp1, axis=-1)
+        best_scales_vp2 = np.argmin(pred_vars_vp2, axis=-1)
+        _, counts_vp1 = np.unique(best_scales_vp1, return_counts=True)
+        _, counts_vp2 = np.unique(best_scales_vp2, return_counts=True)
+
+        # print("VP1 best scale counts: ", counts_vp1)
+        # print("VP2 best scale counts: ", counts_vp2)
+    else:
+        counts_vp1 = np.zeros(4)
+        counts_vp2 = np.zeros(4)
+
+
+
+
     # if 'vp1_var' in vp_data[0].keys():
     #     scores = np.array([item['score'] / (item['vp1_var'] * item['vp2_var']) for item in vp_data])
     #     vp1 = np.array([item['vp1'] for item in vp_data])
@@ -184,6 +205,9 @@ def export_calib_session(session, args, json_name, bcp=False):
     vp2 = vp2[~np.isnan(f)]
     f = f[~np.isnan(f)]
 
+    if args.debug:
+        show_vps(np.array(vp1), np.array(vp2), session)
+
     # med_f = get_focal_kernel_voting(f, scores)
     med_f = np.nanmedian(f)
 
@@ -199,12 +223,32 @@ def export_calib_session(session, args, json_name, bcp=False):
     med_k = np.nanmedian(np.concatenate([b1, b2]))
 
     vp1_calib, vp2_calib = get_calib_vp(vp1, med_m, med_k, med_f, pp)
-    calib_dict = get_calib_dict(vp1_calib, vp2_calib, pp)
 
     if args.debug:
         show_vps(np.array([vp1_calib]), np.array([vp2_calib]), session)
 
-    save(calib_json_path, calib_dict)
+    lp1 = np.array([item['lp1'] for item in vp_data if "lp1" in item and item['lp1'] is not None and item['score'] > args.conf])
+    lp2 = np.array([item['lp2'] for item in vp_data if "lp2" in item and item['lp2'] is not None and item['score'] > args.conf])
+
+    if len(lp1) == 0:
+        calib_dict = get_calib_dict(vp1_calib, vp2_calib, pp)
+        save(calib_json_path, calib_dict)
+
+    else:
+        dists = []
+        projector = get_projector(vp1_calib, vp2_calib, pp)
+        for p1, p2 in zip(lp1, lp2):
+            ip1 = projector(p1)
+            ip2 = projector(p2)
+
+            dists.append(np.linalg.norm(ip1 - ip2))
+
+        med_dist = np.nanmedian(dists)
+        scale = 0.52 / med_dist
+        calib_dict = get_calib_dict(vp1_calib, vp2_calib, pp, scale=scale)
+        save(calib_json_path, calib_dict)
+
+    return counts_vp1, counts_vp2
 
 
 def export_calib():
@@ -213,13 +257,27 @@ def export_calib():
     for json_name in args.json_names:
         print("Running for: ", json_name)
 
+        # total_counts_vp1 = np.zeros(4)
+        # total_counts_vp2 = np.zeros(4)
+
         sessions = sorted(os.listdir(os.path.join(args.bcs_path, 'dataset')))[12:]
         for session in sessions:
-            export_calib_session(session, args, json_name)
+            cnt_vp1, cnt_vp2 = export_calib_session(session, args, json_name)
+            # total_counts_vp1 += cnt_vp1
+            # total_counts_vp2 += cnt_vp2
 
         sessions = sorted(os.listdir(os.path.join(args.bcp_path, 'data')))
         for session in sessions:
-            export_calib_session(session, args, json_name, bcp=True)
+            cnt_vp1, cnt_vp2 = export_calib_session(session, args, json_name, bcp=True)
+            # total_counts_vp1 += cnt_vp1
+            # total_counts_vp2 += cnt_vp2
+
+        # print("Finished: ", json_name)
+        # print("Total vp1 cnt: ", total_counts_vp1)
+        # print("Total vp2 cnt: ", total_counts_vp2)
+        # print('*' * 40)
+
+
 
 
 if __name__ == '__main__':
