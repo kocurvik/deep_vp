@@ -185,9 +185,9 @@ def eval_calib():
             np.mean(rel_errors), np.median(rel_errors),
             np.mean(abs_errors), np.median(abs_errors)))
 
-        print("For {} scale mean rel err: {}, scale median rel err {}, scale mean abs err {}, scale median abs err {}".format(system,
-            np.mean(rel_scale_errors), np.median(rel_scale_errors),
-            np.mean(abs_scale_errors), np.median(abs_scale_errors)))
+        # print("For {} scale mean rel err: {}, scale median rel err {}, scale mean abs err {}, scale median abs err {}".format(system,
+        #     np.mean(rel_scale_errors), np.median(rel_scale_errors),
+        #     np.mean(abs_scale_errors), np.median(abs_scale_errors)))
 
     print("**************************")
     print("Eval BrnoCarPark")
@@ -218,7 +218,7 @@ def eval_calib():
 
             # rel_errors.append(np.mean(results[session][system]['rel_errors']))
             # abs_errors.append(np.mean(results[session][system]['abs_errors']))
-
+            #
             # print(system, session, np.isnan(rel_errors).any())
             # print("{}: mean rel err: {}, median rel err {}, mean abs err {}, median abs err {}".format(session,
             #     np.mean(results[session][system]['rel_errors']), np.median(results[session][system]['rel_errors']),
@@ -228,9 +228,9 @@ def eval_calib():
             np.nanmean(rel_errors), np.nanmedian(rel_errors),
             np.nanmean(abs_errors), np.nanmedian(abs_errors)))
 
-        print("For {} scale mean rel err: {}, scale median rel err {}, scale mean abs err {}, scale median abs err {}".format(system,
-            np.mean(rel_scale_errors), np.median(rel_scale_errors),
-            np.mean(abs_scale_errors), np.median(abs_scale_errors)))
+        # print("For {} scale mean rel err: {}, scale median rel err {}, scale mean abs err {}, scale median abs err {}".format(system,
+        #     np.mean(rel_scale_errors), np.median(rel_scale_errors),
+        #     np.mean(abs_scale_errors), np.median(abs_scale_errors)))
 
 
 if __name__ == '__main__':

@@ -14,7 +14,7 @@ from utils.diamond_space import get_focal
 def parse_command_line():
     parser = argparse.ArgumentParser()
     parser.add_argument('-d', '--debug', action='store_true', default=False)
-    parser.add_argument('-c', '--conf', type=float, default=0.5)
+    parser.add_argument('-c', '--conf', type=float, default=0.1)
     parser.add_argument('bcs_path')
     parser.add_argument('bcp_path')
     parser.add_argument('json_names', metavar='N', nargs='+')
@@ -125,11 +125,6 @@ def get_calib_vp(vp1, m, k, f, pp):
     vp1_calib_x = (b * (b * vp1_avg[0] - a * vp1_avg[1]) - a * c)/(a**2 + b**2)
     vp1_calib_y = (a * (-b * vp1_avg[0] + a * vp1_avg[1]) - b * c)/(a**2 + b**2)
 
-    # vp1[:, 0] = (b * (b * vp1[:, 0] - a * vp1[:, 1]) - a * c)/(a**2 + b**2)
-    # vp1[:, 1] = (a * (-b * vp1[:, 0] + a * vp1[:, 1]) - b * c)/(a**2 + b**2)
-    # vp2[:, 0] = (b * (b * vp2[:, 0] - a * vp2[:, 1]) - a * c)/(a**2 + b**2)
-    # vp2[:, 1] = (a * (-b * vp2[:, 0] + a * vp2[:, 1]) - b * c)/(a**2 + b**2)
-
     aa = -(vp1_calib_x - pp[0])
     bb = -(vp1_calib_y - pp[1])
     cc = (vp1_calib_x - pp[0]) * pp[0] + (vp1_calib_y - pp[1]) * pp[1] - f ** 2
@@ -208,12 +203,7 @@ def export_calib_session(session, args, json_name, bcp=False):
     if args.debug:
         show_vps(np.array(vp1), np.array(vp2), session)
 
-    # med_f = get_focal_kernel_voting(f, scores)
     med_f = np.nanmedian(f)
-
-    # l = np.abs(f - med_f) < 0.01 * med_f
-    # vp1 = vp1[l]
-    # vp2 = vp2[l]
 
     m = (vp1[:, 1] - vp2[:, 1]) / (vp1[:, 0] - vp2[:, 0])
     b1 = vp1[:, 1] - m * vp1[:, 0]
