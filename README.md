@@ -2,6 +2,10 @@
 
 This repository contains the code for the paper "Traffic Camera Calibration via Vehicle Vanishing Point Detection" (submitted to ICANN 2021, arxiv: TBA)
 
+### Note
+
+When using the parameters for augmentation the values have to be doubled from the values presented in the paper. This is due to the fact that the augmentation is happening on a resized image to prevent loss of pixel information.
+
 ### Results
 
 The results from the paper can be downloaded from [Google Drive](https://drive.google.com/file/d/1JfG1kZQf82I5y9z5kAom-zlsh8Hw7qvG/view?usp=sharing). The results need to placed in the relevant folders of the BrnoCompSpeed and BrnoCarPark dataset. The results zip also contains the files for methods by other authors which we used for comparison in our paper.
