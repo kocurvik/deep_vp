@@ -311,7 +311,7 @@ def parse_command_line():
     parser.add_argument('-de', '--dump_every', type=int, default=0, help='save every n frames during extraction scripts')
     parser.add_argument('-mf', '--max_frames', type=int, default=5000, help='number of max frames to process during extraction')
     parser.add_argument('--mask', action='store_true', default=False, help='whether to use mask information during extraction')
-    parser.add_argument('--skip', type=int, default=1)
+    parser.add_argument('--skip', type=int, default=1, help='how many frames to skip in BrnoCompSpeed during extraction')
     # parser.add_argument('-s', '--steps', type=int, default=10000, help='steps per epoch')
     parser.add_argument('path')
     args = parser.parse_args()
