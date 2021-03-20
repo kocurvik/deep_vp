@@ -87,4 +87,3 @@ python eval/extract_vp_bcp_reg.py -b 32 --resnet -l n1.0 -ps 25.0 -cd 10 -exp 2 
 python eval/extract_calib.py /path/to/2016-ITS-BrnoCompSpeed /path/to/BrnoCarPark VPout_VP1VP2_reg_orig_normalized_aug_25.0ps_10cd_b_128in_64out_1.0s_64f_2n_32b_256c_1_r75
 
 
-

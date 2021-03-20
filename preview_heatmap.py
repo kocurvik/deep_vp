@@ -4,6 +4,7 @@ import cv2
 import numpy as np
 
 import tensorflow_hub as hub
+from eval.extract_vp_utils import filter_boxes_bcp
 
 from models.hourglass import load_model, parse_command_line
 from utils.diamond_space import get_focal, process_heatmaps
@@ -15,26 +16,12 @@ def preview():
     os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
 
     heatmap_model, scales, _, _ = load_model(args)
-
     print("Heatmap model loaded!")
 
     object_detecor = hub.load('https://tfhub.dev/tensorflow/centernet/resnet50v1_fpn_512x512/1')
-    # object_detecor = hub.load('https://tfhub.dev/tensorflow/faster_rcnn/resnet50_v1_800x1333/1')
-
     print("Object detection model loaded!")
 
-
-    # cap = cv2.VideoCapture('D:/Skola/PhD/data/2016-ITS-BrnoCompSpeed/dataset/session6_left/video.avi')
-    # cap = cv2.VideoCapture('D:/Skola/PhD/data/BrnoCarPark/videos/video.mp4')
-    cap = get_cap('D:/Skola/PhD/data/BrnoCarPark/frames/S01/000')
-    # mask = cv2.imread('D:/Skola/PhD/data/2016-ITS-BrnoCompSpeed/dataset/session6_left/video_mask.png', 0)
-
-    pp = np.array([960.5, 540.5])
-
-    back_sub = cv2.createBackgroundSubtractorMOG2()
-    kernel_1 = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7, 7))
-    kernel_2 = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (13, 13))
-
+    cap = get_cap(args.path)
 
     vp1s = []
     vp2s = []
@@ -42,6 +29,8 @@ def preview():
     ms = []
     b1s = []
     b2s = []
+
+    prev_edge = None
 
     ret = True
     while ret:
@@ -51,20 +40,18 @@ def preview():
 
         ret, frame = cap.read()
 
-        # frame_od = cv2.resize(frame, (512, 512))
-        frame_od = frame
-        cv2.imshow("pre-mask frame_od", frame_od)
+        pp = np.array([frame.shape[1] / 2 + 0.5, frame.shape[0] / 2 + 0.5])
 
-        frame_od_mask = back_sub.apply(frame_od)
-        frame_od_mask = cv2.morphologyEx(frame_od_mask, cv2.MORPH_OPEN, kernel_1)
-        frame_od_mask = cv2.morphologyEx(frame_od_mask, cv2.MORPH_DILATE, kernel_2)
-        frame_od = cv2.bitwise_and(frame_od, frame_od, mask=frame_od_mask)
-
-        result = object_detecor(frame_od[np.newaxis, :, :, ::-1])
+        result = object_detecor(frame[np.newaxis, :, :, ::-1])
         boxes, labels, scores = result["detection_boxes"].numpy()[0], result["detection_classes"].numpy()[0], result["detection_scores"].numpy()[0]
+        l = np.logical_and(scores > 0.1, labels == 3)
+        boxes = boxes[l]
+        scores = scores[l]
 
-        boxes = boxes[np.logical_and(scores > 0.3, labels == 3)]
-        cv2.imshow("frame_od", frame_od)
+        boxes, scores, _, prev_edge = filter_boxes_bcp(boxes, scores, frame, prev_edge)
+
+        # boxes = boxes[np.logical_and(scores > 0.1, labels == 3)]
+        cv2.imshow("Frame", frame)
         cv2.waitKey(1)
 
         for box in boxes:
@@ -79,7 +66,7 @@ def preview():
             car = frame[y_min:y_max, x_min:x_max, :]
             car = cv2.resize(car, (args.input_size, args.input_size), cv2.INTER_CUBIC)
 
-            cv2.imshow("car", car)
+            cv2.imshow("Vehicle", car)
 
             heatmap_pred = heatmap_model.predict(car[np.newaxis, ...]/255)
 
@@ -109,21 +96,21 @@ def preview():
                 b1s.append(b1)
                 b2s.append(b2)
 
-            print("VP1: {} \t VP2: {} \t focal: {}".format(vp1, vp2, focal))
+                print("VP1: {} \t VP2: {} \t focal: {}".format(vp1, vp2, focal))
 
-            print("Median horizon y = {} * x + {}".format(np.nanmedian(ms), np.nanmedian(np.concatenate([b1s, b2s]))))
-            print("Median focal {}".format(np.nanmedian(fs)))
+                print("Median horizon y = {} * x + {}".format(np.nanmedian(ms), np.nanmedian(np.concatenate([b1s, b2s]))))
+                print("Median focal {}".format(np.nanmedian(fs)))
 
-            frame_scale = np.copy(frame)
-            try:
-                frame_scale = cv2.line(frame_scale, (int(box_center[0]), int(box_center[1])), (int(vp1[0]), int(vp1[1])), (0, 255, 0), thickness=2)
-                frame_scale = cv2.line(frame_scale, (int(box_center[0]), int(box_center[1])), (int(vp2[0]), int(vp2[1])), (0, 0, 255), thickness=2)
-                frame_scale = cv2.line(frame_scale, (int(vp1[0]), int(vp1[1])), (int(vp2[0]), int(vp2[1])), (0, 255, 255), thickness=2)
-            except Exception:
-                ...
+                frame_scale = np.copy(frame)
+                try:
+                    frame_scale = cv2.line(frame_scale, (int(box_center[0]), int(box_center[1])), (int(vp1[0]), int(vp1[1])), (0, 255, 0), thickness=2)
+                    frame_scale = cv2.line(frame_scale, (int(box_center[0]), int(box_center[1])), (int(vp2[0]), int(vp2[1])), (0, 0, 255), thickness=2)
+                    frame_scale = cv2.line(frame_scale, (int(vp1[0]), int(vp1[1])), (int(vp2[0]), int(vp2[1])), (0, 255, 255), thickness=2)
+                except Exception:
+                    ...
 
-            cv2.imshow("vps", frame_scale)
-            cv2.waitKey(1)
+                cv2.imshow("Vanishing points", frame_scale)
+                cv2.waitKey(1)
 
 
 if __name__ == '__main__':
