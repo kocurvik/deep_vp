@@ -1,6 +1,6 @@
 # Traffic Camera Calibration via Vehicle Vanishing Point Detection
 
-This repository contains the code for the paper "Traffic Camera Calibration via Vehicle Vanishing Point Detection" (submitted to ICANN 2021, arxiv: TBA)
+This repository contains the code for the paper "Traffic Camera Calibration via Vehicle Vanishing Point Detection" (submitted to ICANN 2021, arxiv: [2103.11438](https://arxiv.org/abs/2103.11438))
 
 ### Note
 
