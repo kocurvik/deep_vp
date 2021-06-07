@@ -5,6 +5,8 @@ import os
 import pickle
 
 import numpy as np
+from scipy.optimize import minimize_scalar, linprog
+
 
 def parse_command_line():
     parser = argparse.ArgumentParser()
@@ -65,6 +67,39 @@ def eval_pure_calibration(distances, projector):
     return rel_errors, abs_errors
 
 
+def eval_optim_calibration(distances, projector):
+    projector_dists = np.array([np.linalg.norm(projector(d["p1"]) - projector(d["p2"])) for d in distances])
+    real_dists = np.array([d["distance"] for d in distances])
+
+    c = np.concatenate([np.array([0]), 1/real_dists])
+    b = np.repeat(real_dists, 2)
+    b[1::2] *= -1
+
+    dp = np.repeat(projector_dists, 2)
+    dp[1::2] *= -1
+
+    A = np.zeros([2*len(real_dists), 1 + len(real_dists)])
+    A[:, 0] = dp
+    for i in range(len(real_dists)):
+        A[2 * i, i + 1] = -1
+        A[2 * i + 1, i + 1] = -1
+
+    res = linprog(c, A_ub=A, b_ub=b)
+    alpha = res.x[0]
+    # print(res.fun)
+    # t = res.x[1:]
+
+    # alpha = np.median(real_dists / projector_dists)
+    optimal_projector_dists = alpha * projector_dists
+
+    abs_errors = np.abs(optimal_projector_dists - real_dists)
+    rel_errors = np.abs((optimal_projector_dists - real_dists) / real_dists)
+
+    return rel_errors, abs_errors
+
+
+
+
 def eval_scale_calibration(distances, projector, scale):
     rel_errors = []
     abs_errors = []
@@ -110,6 +145,7 @@ def eval_session_bcs(path, session):
 
         projector, scale = get_system_projector(system_data)
         rel_errors, abs_errors = eval_pure_calibration(distance_measurement, projector)
+        # rel_errors, abs_errors = eval_optim_calibration(distance_measurement, projector)
         rel_scale_errors, abs_scale_errors =  eval_scale_calibration(distance_measurement, projector, scale)
         out[system] = {'rel_errors': rel_errors, 'abs_errors': abs_errors, 'rel_scale_errors': rel_scale_errors, 'abs_scale_errors': abs_scale_errors}
 
@@ -132,7 +168,8 @@ def eval_session_bcp(path, session):
             system_data = json.load(f)
 
         projector, scale = get_system_projector(system_data)
-        rel_errors, abs_errors = eval_pure_calibration(distance_measurement, projector)
+        # rel_errors, abs_errors = eval_pure_calibration(distance_measurement, projector)
+        rel_errors, abs_errors = eval_optim_calibration(distance_measurement, projector)
         rel_scale_errors, abs_scale_errors =  eval_scale_calibration(distance_measurement, projector, scale)
         out[system] = {'rel_errors': rel_errors, 'abs_errors': abs_errors, 'rel_scale_errors': rel_scale_errors, 'abs_scale_errors': abs_scale_errors}
 
@@ -177,9 +214,10 @@ def eval_calib():
             # rel_errors.append(np.mean(results[session][system]['rel_errors']))
             # abs_errors.append(np.mean(results[session][system]['abs_errors']))
 
-            # print("{}: mean rel err: {}, median rel err {}, mean abs err {}, median abs err {}".format(session,
-            #     np.mean(results[session][system]['rel_errors']), np.median(results[session][system]['rel_errors']),
-            #     np.mean(results[session][system]['abs_errors']), np.median(results[session][system]['abs_errors'])))
+            # if 'landmarks' in system or 'pd_aug_25.0ps_10cd_128in_64out_4s_2n_32b_256c_1_r75_0.1c' in system:
+            #     print("{}: mean rel err: {}, median rel err {}, mean abs err {}, median abs err {}".format(session,
+            #         np.mean(results[session][system]['rel_errors']), np.median(results[session][system]['rel_errors']),
+            #         np.mean(results[session][system]['abs_errors']), np.median(results[session][system]['abs_errors'])))
 
         print("For {} mean rel err: {}, median rel err {}, mean abs err {}, median abs err {}".format(system,
             np.mean(rel_errors), np.median(rel_errors),
@@ -219,14 +257,16 @@ def eval_calib():
             # rel_errors.append(np.mean(results[session][system]['rel_errors']))
             # abs_errors.append(np.mean(results[session][system]['abs_errors']))
             #
-            # print(system, session, np.isnan(rel_errors).any())
-            # print("{}: mean rel err: {}, median rel err {}, mean abs err {}, median abs err {}".format(session,
-            #     np.mean(results[session][system]['rel_errors']), np.median(results[session][system]['rel_errors']),
-            #     np.mean(results[session][system]['abs_errors']), np.median(results[session][system]['abs_errors'])))
+
+            if 'landmarks' in system or 'pd_aug_25.0ps_10cd_128in_64out_4s_2n_32b_256c_1_r75_0.1c' in system:
+                print("{}: mean rel err: {}, median rel err {}, mean abs err {}, median abs err {}".format(session,
+                    np.mean(results[session][system]['rel_errors']), np.median(results[session][system]['rel_errors']),
+                    np.mean(results[session][system]['abs_errors']), np.median(results[session][system]['abs_errors'])))
+
 
         print("For {} mean rel err: {}, median rel err {}, mean abs err {}, median abs err {}".format(system,
-            np.nanmean(rel_errors), np.nanmedian(rel_errors),
-            np.nanmean(abs_errors), np.nanmedian(abs_errors)))
+            np.mean(rel_errors), np.median(rel_errors),
+            np.mean(abs_errors), np.median(abs_errors)))
 
         # print("For {} scale mean rel err: {}, scale median rel err {}, scale mean abs err {}, scale median abs err {}".format(system,
         #     np.mean(rel_scale_errors), np.median(rel_scale_errors),
