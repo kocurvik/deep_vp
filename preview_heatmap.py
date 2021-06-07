@@ -22,6 +22,7 @@ def preview():
     print("Object detection model loaded!")
 
     cap = get_cap(args.path)
+    # cap.set(cv2.CAP_PROP_POS_FRAMES, 100)
 
     vp1s = []
     vp2s = []
@@ -44,7 +45,7 @@ def preview():
 
         result = object_detecor(frame[np.newaxis, :, :, ::-1])
         boxes, labels, scores = result["detection_boxes"].numpy()[0], result["detection_classes"].numpy()[0], result["detection_scores"].numpy()[0]
-        l = np.logical_and(scores > 0.1, labels == 3)
+        l = np.logical_and(scores > 0.5, labels == 3)
         boxes = boxes[l]
         scores = scores[l]
 
@@ -110,7 +111,31 @@ def preview():
                     ...
 
                 cv2.imshow("Vanishing points", frame_scale)
-                cv2.waitKey(1)
+                if cv2.waitKey(0) == ord('s'):
+                    # save heatmaps
+
+                    print("VP1 var idx: ", vp1_var_idx)
+                    print("VP2 var idx: ", vp2_var_idx)
+                    print("VP1 var: ", vp1_var)
+                    print("VP2 var: ", vp2_var)
+
+                    print("xmin: ", x_min)
+                    print("xmax: ", x_max)
+                    print("ymin: ", y_min)
+                    print("ymax: ", x_max)
+
+                    cv2.imwrite("datasets/vis/frame_preview.png", frame)
+                    cv2.imwrite("datasets/vis/car_preview.png", car)
+
+                    heatmap_pred[-1][heatmap_pred[-1] < 0] = 0
+
+                    for vp_idx in range(2):
+                        for scale_idx, scale in enumerate(scales):
+                            idx = len(scales) * vp_idx + scale_idx
+                            cv2.imwrite("datasets/vis/heatmap_preview_vp{}_s{}.png".format(vp_idx + 1, scale),
+                                        cv2.applyColorMap(
+                                            np.uint8(255 * heatmap_pred[-1][0, :, :, idx] / np.max(heatmap_pred[-1][0, :, :, idx])),
+                                            cv2.COLORMAP_PARULA))
 
 
 if __name__ == '__main__':

@@ -273,38 +273,48 @@ if __name__ == '__main__':
         orig_coord_heatmap[np.isinf(orig_coord_heatmap)] = 0
         orig_coord_heatmaps.append(orig_coord_heatmap)
 
-    d_aug = HeatmapBoxCarsDataset(path, 'train', img_size=128, heatmap_size=heatmap_out, scales=scales, peak_original=peak_original)
-    d_noaug = HeatmapBoxCarsDataset(path, 'train', img_size=128, heatmap_size=heatmap_out, scales=scales, peak_original=peak_original, perspective_sigma=0.0, crop_delta=0)
-    # d = HeatmapBoxCarsDataset(path, 'val', img_size=1024, heatmap_size=heatmap_out, scales=scales, peak_original=peak_original)
+    # d_aug = HeatmapBoxCarsDataset(path, 'train', img_size=128, heatmap_size=heatmap_out, scales=scales, peak_original=peak_original)
+    # d_noaug = HeatmapBoxCarsDataset(path, 'train', img_size=128, heatmap_size=heatmap_out, scales=scales, peak_original=peak_original, perspective_sigma=0.0, crop_delta=0)
+    d = HeatmapBoxCarsDataset(path, 'val', img_size=128, heatmap_size=heatmap_out, scales=scales, peak_original=peak_original, perspective_sigma=0.0, crop_delta=0)
     # print("Dataset loaded with size: ", len(d.instance_list))
 
     # cum_heatmap = np.zeros([heatmap_out, heatmap_out, 2*len(scales)])
     cum_heatmap_aug = np.zeros([heatmap_out, heatmap_out, 2*len(scales)])
     cum_heatmap_noaug = np.zeros([heatmap_out, heatmap_out, 2*len(scales)])
 
-    for _ in range(10000):
-        i = np.random.choice(len(d_aug.instance_list))
-    # for i in [1856, 3815, 3611]:
-    #     print("idx: ", i)
+    # for _ in range(10000):
+    #     i = np.random.choice(len(d_aug.instance_list))
+    for i in [1856, 3815, 3611]:
+        print("idx: ", i)
 
-        img, heatmap_aug = d_aug.get_single_item(i)
-        img, heatmap_noaug = d_noaug.get_single_item(i)
+        img, heatmap = d.get_single_item(i)
 
-        cum_heatmap_aug += heatmap_aug
-        cum_heatmap_noaug += heatmap_noaug
+        cv2.imwrite("vis/img_{}.png".format(i), img)
+        # stop = [False, False]
 
-    for vp_idx in range(2):
-        for scale_idx, scale in enumerate(scales):
-            idx = len(scales) * vp_idx + scale_idx
-            cv2.imwrite("heatmap_aug_vp{}_scale{}.png".format(vp_idx + 1, scale), cv2.applyColorMap(np.uint8(255 * cum_heatmap_aug[:, :, idx] / np.max(cum_heatmap_aug[:, :, idx])), cv2.COLORMAP_PARULA))
-            cv2.imwrite("heatmap_noaug_vp{}_scale{}.png".format(vp_idx + 1, scale), cv2.applyColorMap(np.uint8(255 * cum_heatmap_noaug[:, :, idx] / np.max(cum_heatmap_noaug[:, :, idx])), cv2.COLORMAP_PARULA))
+        for vp_idx in range(2):
+            for scale_idx, scale in enumerate(scales):
+                idx = len(scales) * vp_idx + scale_idx
+                cv2.imwrite("vis/heatmap_{}_vp{}_s{}.png".format(i, vp_idx + 1, scale), cv2.applyColorMap(np.uint8(255 * heatmap[:, :, idx] / np.max(heatmap[:, :, idx])), cv2.COLORMAP_PARULA))
+
+        # img, heatmap_aug = d_aug.get_single_item(i)
+        # img, heatmap_noaug = d_noaug.get_single_item(i)
+
+        # cum_heatmap_aug += heatmap_aug
+        # cum_heatmap_noaug += heatmap_noaug
+
+    # for vp_idx in range(2):
+        # for scale_idx, scale in enumerate(scales):
+        #     idx = len(scales) * vp_idx + scale_idx
+        #     cv2.imwrite("vis/heatmap_aug_vp{}_scale{}.png".format(vp_idx + 1, scale), cv2.applyColorMap(np.uint8(255 * cum_heatmap_aug[:, :, idx] / np.max(cum_heatmap_aug[:, :, idx])), cv2.COLORMAP_PARULA))
+        #     cv2.imwrite("vis/heatmap_noaug_vp{}_scale{}.png".format(vp_idx + 1, scale), cv2.applyColorMap(np.uint8(255 * cum_heatmap_noaug[:, :, idx] / np.max(cum_heatmap_noaug[:, :, idx])), cv2.COLORMAP_PARULA))
 
 
 
 
         # cv2.imshow("Img", img)
         # stop = [False, False]
-
+        #
         # for vp_idx in range(2):
         #     for scale_idx, scale in enumerate(scales):
         #         idx = len(scales) * vp_idx + scale_idx
@@ -320,7 +330,7 @@ if __name__ == '__main__':
             # if np.abs(vp[0]) < 7 and np.abs(vp[1]) < 3:
             #     stop[vp_idx] = True
 
-
+        #
         # if stop[0] and stop[1]:
         #     cv2.imwrite("img_{}.png".format(i), 255 * img)
         #     cv2.imwrite("heatmap_vp1_{}.png".format(i), 255 * heatmap[:, :, 3])
