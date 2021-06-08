@@ -1,6 +1,6 @@
 # Traffic Camera Calibration via Vehicle Vanishing Point Detection
 
-This repository contains the code for the paper "Traffic Camera Calibration via Vehicle Vanishing Point Detection" (submitted to ICANN 2021, arxiv: TBA)
+This repository contains the code for the paper "Traffic Camera Calibration via Vehicle Vanishing Point Detection" (submitted to ICANN 2021, arxiv: [2103.11438](https://arxiv.org/abs/2103.11438))
 
 ### Note
 
@@ -41,8 +41,8 @@ You will need to download the BoxCars116k dataset.
 To evaluate the model first run the object detectors on BrnoCompSpeed and BrnoCarPark datasets:
 
 ```
-python eval/detect_bcp.py /path/to/BrnoCarPark
-python eval/detect_bcs.py --skip 10 /path/to/2016-ITS-BrnoCompSpeed
+python object_detection/detect_bcp.py /path/to/BrnoCarPark
+python object_detection/detect_bcs.py --skip 10 /path/to/2016-ITS-BrnoCompSpeed
 ```
 
 Then extract the vanishing points:
