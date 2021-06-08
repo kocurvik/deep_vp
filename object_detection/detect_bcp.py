@@ -17,6 +17,7 @@ def parse_args():
     parser.add_argument('-d', '--dump_every', type=int, default=0)
     parser.add_argument('-c', '--conf', type=float, default=0.1)
     parser.add_argument('--debug', action='store_true', default=False)
+    parser.add_argument('-g', '--gpu', type=str, default='0', help='which gpu to use')
     parser.add_argument('path')
 
     args = parser.parse_args()
@@ -84,6 +85,7 @@ def detect_session(detector, path, session, conf=0.1, dump_every=0, max_frames=5
 
 def detect():
     args = parse_args()
+    os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
     set_gpus()
 
     if args.mask:
