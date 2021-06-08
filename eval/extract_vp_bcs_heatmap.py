@@ -84,6 +84,7 @@ def detect_session(detector, model_dir_name, data_path, session, args, scales):
 
 def detect():
     args = parse_command_line()
+    os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
     set_gpus()
 
 
