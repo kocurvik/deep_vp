@@ -1,6 +1,6 @@
 # Traffic Camera Calibration via Vehicle Vanishing Point Detection
 
-This repository contains the code for the paper "Traffic Camera Calibration via Vehicle Vanishing Point Detection" (submitted to ICANN 2021, arxiv: [2103.11438](https://arxiv.org/abs/2103.11438))
+This repository contains the code for the paper "Traffic Camera Calibration via Vehicle Vanishing Point Detection" (presented as oral talk at ICANN 2021: [doi:10.1007/978-3-030-86383-8_50](https://doi.org/10.1007/978-3-030-86383-8_50), arxiv: [2103.11438](https://arxiv.org/abs/2103.11438))
 
 ### Note
 
@@ -62,3 +62,20 @@ python eval/eval_calib.py /path/to/2016-ITS-BrnoCompSpeed /path/to/BrnoCarPark
 ### Ablation experiments
 
 To run all of the ablation experiments from Table 3 in the paper run `scripts/run_experiments.sh`. Note that you will need to run `scripts/prepare_object_detection.sh` if you haven't dones so before.
+
+## Citations
+
+If you find this work usefuel in your research please consider citing:
+
+```
+@incollection{Kocur2021,
+  doi = {10.1007/978-3-030-86383-8_50},
+  url = {https://doi.org/10.1007/978-3-030-86383-8_50},
+  year = {2021},
+  publisher = {Springer International Publishing},
+  pages = {628--639},
+  author = {Viktor Kocur and Milan Ft{\'{a}}{\v{c}}nik},
+  title = {Traffic Camera Calibration via Vehicle Vanishing Point Detection},
+  booktitle = {Lecture Notes in Computer Science}
+}
+```
