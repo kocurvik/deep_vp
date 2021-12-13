@@ -65,7 +65,7 @@ To run all of the ablation experiments from Table 3 in the paper run `scripts/ru
 
 ## Citations
 
-If you find this work usefuel in your research please consider citing:
+If you find this work useful in your research please consider citing:
 
 ```
 @incollection{Kocur2021,
