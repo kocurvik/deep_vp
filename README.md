@@ -8,7 +8,7 @@ When using the parameters for augmentation the values have to be doubled from th
 
 ### Results
 
-The results from the paper can be downloaded from [Google Drive](https://drive.google.com/file/d/1JfG1kZQf82I5y9z5kAom-zlsh8Hw7qvG/view?usp=sharing). The results need to placed in the relevant folders of the BrnoCompSpeed and BrnoCarPark dataset. The results zip also contains the files for methods by other authors which we used for comparison in our paper.
+The results from the paper can be downloaded from [OneDrive](https://liveuniba-my.sharepoint.com/:u:/g/personal/kocur15_uniba_sk/IQADaZzCqCXoSZCTG4PGeLV-AfZxdB2FUa6M8CQ1Luogo3A?e=LNsXHu). The results need to placed in the relevant folders of the BrnoCompSpeed and BrnoCarPark dataset. The results zip also contains the files for methods by other authors which we used for comparison in our paper.
 
 You can run the evaluation using the following:
 ```
@@ -17,7 +17,7 @@ python eval/eval_calib.py /path/to/2016-ITS-BrnoCompSpeed /path/to/BrnoCarPark
 
 ### Model preview
 
-You can download the pretrained model from from [Google Drive](https://drive.google.com/file/d/1Ppz96cIEol_UqgF2mQpoTxKkGwVvQ38P/view?usp=sharing) and extract the contents into the repository directory.
+You can download the pretrained model from from [OneDrive](https://liveuniba-my.sharepoint.com/:u:/g/personal/kocur15_uniba_sk/IQD-ANFG1CLcRp4nIVJB1BghAV33DPzLwfKWXrd97Gq3l0Y?e=waQdl9) and extract the contents into the repository directory.
 
 You can run the preview using the preview_heatmap.py:
 
